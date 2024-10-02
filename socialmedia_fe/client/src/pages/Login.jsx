@@ -16,21 +16,18 @@ const Login = () => {
   } = useForm({
     mode: "onChange",
   });
-
   const onSubmit = async (data) => {};
 
   const [errMsg, setErrMsg] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const dispatch = useDispatch();
+
   return (
     <div className='bg-bgColor w-full h-[100vh] flex items-center justify-center p-6'>
       <div className='w-full md:w-2/3 h-fit lg:h-full 2xl:h-5/6 py-8 lg:py-0 flex bg-primary rounded-xl overflow-hidden shadow-xl border border-black'>
         {/* LEFT */}
         <div className='w-full lg:w-1/2 h-full p-10 2xl:px-20 flex flex-col justify-center '>
           <div className='w-full flex gap-2 items-center mb-6'>
-            {/* <span className='text-2xl text-[#DC884B] font-semibold'>
-              FoodTalk
-            </span> */}
             <img
               src={logo_without_background}
               alt='Logo without background'
@@ -68,13 +65,6 @@ const Login = () => {
               error={errors.password ? errors.password?.message : ""}
             />
 
-            <Link
-              to='/reset-password'
-              className='text-sm text-right text-blue font-semibold'
-            >
-              Forgot Password ?
-            </Link>
-
             {errMsg?.message && (
               <span
                 className={`text-sm ${
@@ -92,13 +82,13 @@ const Login = () => {
             ) : (
               <CustomButton
                 type='submit'
-                containerStyles={`inline-flex justify-center rounded-full bg-customOrange px-8 py-3 text-sm font-medium text-white outline-none`}
+                containerStyles={`inline-flex justify-center rounded-full bg-customOrange px-8 py-3 text-sm font-medium text-white outline-none mt-8`}
                 title='Login'
               />
             )}
           </form>
 
-          <p className='text-ascent-2 text-sm text-center'>
+          <p className='text-ascent-2 text-sm text-center mt-3'>
             Don't have an account?
             <Link
               to='/register'
@@ -107,7 +97,16 @@ const Login = () => {
               Create Account
             </Link>
           </p>
+
+          <Link
+            to='/reset-password'
+            className='text-sm text-center text-blue font-semibold'
+          >
+            Forgot Password ?
+          </Link>
+
         </div>
+
         {/* RIGHT */}
         <div className='hidden w-1/2 h-full lg:flex flex-col items-center justify-center bg-customOrange'>
           <div className='relative w-full flex items-center justify-center'>
@@ -135,13 +134,14 @@ const Login = () => {
 
           <div className='mt-16 text-center'>
             <p className='text-white text-base'>
-              Connect with friedns & have share for fun
+              Connect with friends & have share for fun
             </p>
             <span className='text-sm text-white/80'>
               Share memories with friends and the world.
             </span>
           </div>
         </div>
+        
       </div>
     </div>
   );
