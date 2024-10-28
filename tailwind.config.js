@@ -10,6 +10,17 @@ module.exports = {
       },
       borderColor: {
         customOrange: '#d2511f'
+      },
+      light: {
+        background: '#ffffff',
+        color: '#000000',
+        primary: '#007bff',
+      },
+      dark: {
+        background: '#000000',
+        color: '#ffffff',
+        primary: '#1e1e1e',
+
       }
     },
   },

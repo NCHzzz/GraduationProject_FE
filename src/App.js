@@ -25,7 +25,7 @@ function App() {
       <Routes>
         <Route element={<Layout />}>
           <Route path='/' element={<Home />} />
-          <Route paath='/profile/:id?' element={<Profile />}></Route>
+          <Route path='/profile/:id?' element={<Profile />}></Route>
         </Route>
 
         <Route path='/register' element={<Register />} />

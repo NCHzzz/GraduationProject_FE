@@ -4,9 +4,18 @@ import { Link } from 'react-router-dom';
 import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
 import { AtSign, Heart, MessageCircle } from 'lucide-react';
+import two_dogs from "../assets/two_dogs.jpg";
+import { useSelector } from 'react-redux';
+import EditProfile from '../components/EditProfile'; // Import the EditProfile component
+import LeftSideBar from '../components/LeftSideBar'; // Import the LeftSideBar component
+import { TopBar } from '../components';
 
 const Profile = () => {
   const [activeTab, setActiveTab] = useState('posts');
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false); // State to control modal visibility
+  const { theme } = useSelector((state) => state.theme);
+  const { user, edit } = useSelector((state) => state.user);
+
 
   const handleTabChange = (tab) => {
     setActiveTab(tab);
@@ -14,8 +23,8 @@ const Profile = () => {
 
   // Placeholder data
   const placeholderProfile = {
-    profilePicture: "https://example.com/sample.jpg", // Sample image URL
-    username: "SampleUser",
+    profilePicture: two_dogs, // Sample image URL
+    username: "Khuong Ngo",
     bio: "This is a sample bio.",
     postsCount: 10,
     followersCount: 100,
@@ -29,23 +38,42 @@ const Profile = () => {
   const displayedPost = activeTab === 'posts' ? placeholderProfile.posts : [];
 
   return (
-    <div className='flex max-w-5xl justify-center mx-auto pl-10'>
-      <div className='flex flex-col gap-20 p-8'>
-        <div className='grid grid-cols-2'>
-          <section className='flex items-center justify-center'>
-            <Avatar className='h-32 w-32'>
-              <AvatarImage src={placeholderProfile.profilePicture} alt="profilephoto" />
-              <AvatarFallback>CN</AvatarFallback>
-            </Avatar>
+    <div className={`flex min-h-screen ${theme === "light" ? "bg-white text-black" : "bg-black text-white"}`}>
+      
+      <div className='hidden w-1/5 h-full md:flex flex-col gap-6 overflow-y-auto'>
+        <LeftSideBar user={user}/>
+      </div>
+
+      {/* Main Profile Content */}
+      <div className='flex-1 h-full px-4 flex flex-col gap-6 overflow-y-auto rounded-lg mt-10'>
+        <div className='flex flex-row'>
+          <section >
+            <div className='flex items-center justify-left w-full p-4'> 
+              <Avatar className='h-32 w-32'>
+                <AvatarImage src={placeholderProfile.profilePicture} alt="profilephoto" />
+                <AvatarFallback>CN</AvatarFallback>
+              </Avatar>
+            </div>
           </section>
+
           <section>
-            <div className='flex flex-col gap-5'>
-              <div className='flex items-center gap-2'>
+            <div className='flex flex-col gap-5 w-full p-4'>
+              <div className='flex items-left gap-2'>
                 <span>{placeholderProfile.username}</span>
-                <Link to="/account/edit">
-                  <Button variant='secondary' className='hover:bg-gray-200 h-8'>Edit profile</Button>
-                </Link>
+                <Button
+                  variant='secondary'
+                  className='hover:bg-gray-200 h-8'
+                  onClick={() => setIsEditModalOpen(true)} 
+                >
+                  Edit profile
+                 
+                </Button>
               </div>
+
+              {isEditModalOpen && (
+                  <EditProfile open={isEditModalOpen} setOpen={setIsEditModalOpen} />
+              )}
+
               <div className='flex items-center gap-4'>
                 <p><span className='font-semibold'>{placeholderProfile.postsCount} </span>posts</p>
                 <p><span className='font-semibold'>{placeholderProfile.followersCount} </span>followers</p>
@@ -58,7 +86,6 @@ const Profile = () => {
                 </Badge>
                 <span>🤯Sample bio line 1</span>
                 <span>🤯Sample bio line 2</span>
-                <span>🤯Sample bio line 3</span>
               </div>
             </div>
           </section>
@@ -97,6 +124,9 @@ const Profile = () => {
           </div>
         </div>
       </div>
+
+      {/* Modal for editing profile */}
+      {isEditModalOpen && <EditProfile onClose={() => setIsEditModalOpen(false)} />} {/* Close modal on click */}
     </div>
   );
 };
