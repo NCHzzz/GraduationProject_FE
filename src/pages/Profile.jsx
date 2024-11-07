@@ -16,7 +16,6 @@ const Profile = () => {
   const { theme } = useSelector((state) => state.theme);
   const { user, edit } = useSelector((state) => state.user);
 
-
   const handleTabChange = (tab) => {
     setActiveTab(tab);
   };
@@ -92,14 +91,14 @@ const Profile = () => {
         </div>
         <div className='border-t border-t-gray-200'>
           <div className='flex items-center justify-center gap-10 text-sm'>
-            <span className={`py-3 cursor-pointer ${activeTab === 'posts' ? 'font-bold' : ''}`} onClick={() => handleTabChange('posts')}>
+          <span className={`py-3 cursor-pointer ${activeTab === 'posts' ? 'font-bold' : ''}`} onClick={() => handleTabChange('posts')}>
               POSTS
             </span>
             <span className={`py-3 cursor-pointer ${activeTab === 'saved' ? 'font-bold' : ''}`} onClick={() => handleTabChange('saved')}>
               SAVED
-            </span>
-            <span className='py-3 cursor-pointer'>REELS</span>
-            <span className='py-3 cursor-pointer'>TAGS</span>
+            </span> 
+            <span className={`py-3 cursor-pointer ${activeTab === 'reels' ? 'font-bold' : ''}`} onClick={() => handleTabChange('reels')}>REELS</span>
+            <span className={`py-3 cursor-pointer ${activeTab === 'tags' ? 'font-bold' : ''}`} onClick={() => handleTabChange('tags')}>TAGS</span>
           </div>
           <div className='grid grid-cols-3 gap-1'>
             {

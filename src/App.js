@@ -5,6 +5,7 @@ import Register from "./pages/Register";
 import Profile from "./pages/Profile";
 import ResetPassword from "./pages/ResetPassword"
 import { useSelector } from "react-redux";
+import OtherUserProfile from "./pages/OtherUserProfile";
 
 function Layout() {
   const { user } = useSelector(state=> state.user);
@@ -25,7 +26,7 @@ function App() {
       <Routes>
         <Route element={<Layout />}>
           <Route path='/' element={<Home />} />
-          <Route path='/profile/:id?' element={<Profile />}></Route>
+          <Route path='/profile/:id?' element={<OtherUserProfile />}></Route>
         </Route>
 
         <Route path='/register' element={<Register />} />

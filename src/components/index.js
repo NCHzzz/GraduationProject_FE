@@ -12,6 +12,7 @@ import Search from "./SearchComponent";
 import BottomSideBar from "./BottomSideBar";
 import Small_LeftSideBar from "./Small_LeftSideBar";
 import SearchComponent from "./SearchComponent";
+import DetailProfilePost from "./DetailProfilePost";
 export {
     Loading,
     TextInput,
@@ -26,5 +27,6 @@ export {
     Search,
     BottomSideBar,
     Small_LeftSideBar,
-    SearchComponent
+    SearchComponent,
+    DetailProfilePost
 };

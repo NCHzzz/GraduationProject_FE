@@ -17,16 +17,14 @@ const PostDetail = ({ post, onClose, user }) => {
 
   const getComments = async () => {
     setLoading(true);
-    // Simulate fetching comments
-    setComments(postComments); // Replace with your fetch logic
+    setComments(postComments); 
     setLoading(false);
   };
 
   useEffect(() => {
     const fetchComments = async () => {
       setLoading(true);
-      // Simulate fetching comments for the post
-      const fetchedComments = post?.comments || []; // Replace with your fetch logic
+      const fetchedComments = post?.comments || [];
       setComments(fetchedComments);
       setLoading(false);
     };
@@ -37,11 +35,11 @@ const PostDetail = ({ post, onClose, user }) => {
   }, [post]);
 
   const handleLike = async () => {
-    // Implement like functionality here
+
   };
 
   const handleDelete = async () => {
-    // Implement delete functionality here
+
   };
 
   return (
@@ -57,56 +55,38 @@ const PostDetail = ({ post, onClose, user }) => {
           <>
             <div className='flex gap-3 items-center mb-4'>
               <img
-                src={post?.userId?.profileUrl ?? NoProfile}
-                alt={post?.userId?.firstName}
+                src={user?.profileUrl ?? NoProfile}
+                alt={user?.userName}
                 className='w-14 h-14 object-cover rounded-full'
               />
               <div>
                 <p className='font-medium text-lg'>
-                  {post?.userId?.firstName} {post?.userId?.lastName}
+                  {user?.userName ?? "User"}
                 </p>
                 <span className='text-gray-500'>{moment(post?.createdAt).fromNow()}</span>
               </div>
             </div>
 
             <div className='mb-4'>
-              <p className='text-white'>{post?.description}</p>
+            <h1 className={`${theme === "light" ? " text-black" : " text-white "} text-xl font-bold mb-2 `}>{post?.title}</h1>
+              <p className={`${theme === "light" ? " text-black" : " text-white "} mb-2 `}>{post?.shortDescription}</p>
               {post?.image && (
-                <img src={post?.image} alt='post' className='w-full mt-2 rounded-lg' />
+                <img src={post?.imageUrl} alt='post' className='w-full mt-2 rounded-lg' />
               )}
             </div>
             
-            <h1 className="text-white text-xl font-bold mb-2">Location</h1>
+            <h1 className={`${theme === "light" ? " text-black" : " text-white "} text-xl font-bold mb-2 `}>Location</h1>
             <div className=''>
               <a
                 href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent("600 Dien Bien Phu, 22 Ward, Binh Thanh district, Ho Chi Minh city")}`}
-                target="_blank" // Open in a new tab
-                rel="noopener noreferrer" // Security measure
+                target="_blank" 
+                rel="noopener noreferrer" 
                 className="text-white text-m font-bold mb-2 hover:underline"
               >
-                600 Dien Bien Phu, 22 Ward, Binh Thanh district, Ho Chi Minh city
+                {post?.location}
               </a>
             </div>
               
-            {/* <div className='flex justify-between items-center border-t border-gray-300 pt-2'>
-              <p className='flex gap-2 items-center text-base cursor-pointer' onClick={handleLike}>
-                {post?.likes?.includes(user?._id) ? (
-                  <BiSolidLike size={20} color='#d2511f' />
-                ) : (
-                  <BiLike size={20} />
-                )}
-                {post?.likes?.length} Likes
-              </p>
-
-              {user?._id === post?.userId?._id && (
-                <div className='flex gap-1 items-center text-base text-red-500 cursor-pointer' onClick={handleDelete}>
-                  <MdOutlineDeleteOutline size={20} />
-                  <span>Delete</span>
-                </div>
-              )}
-            </div> */}
-
-
             <div className='mt-4 flex justify-items-start items-center px-3 py-1 text-ascent-2 text-base border-t border-[#66666645]'>
               <p className='flex mr-5 gap-1 items-center text-base cursor-pointer' onClick={handleLike}>
                 {post?.likes?.includes(user?._id) ? (

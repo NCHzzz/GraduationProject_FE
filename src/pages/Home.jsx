@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
   CustomButton,
@@ -16,28 +16,45 @@ import {
 import { suggest, requests, posts } from "../assets/data";
 import { Link } from "react-router-dom";
 import { NoProfile } from "../assets";
-import { BsFiletypeGif, BsPersonFillAdd } from "react-icons/bs";
-import { BiImages, BiSolidVideo } from "react-icons/bi";
+import { BsPersonFillAdd } from "react-icons/bs";
 import { useForm } from "react-hook-form";
-import { useTheme } from "../ThemeContext"; 
 import { SetTheme } from "../redux/theme";
 import { useNavigate } from 'react-router-dom';
 import useMediaQuery from "../hooks/useMediaQuery";
-
+import useGetAllPost from "../hooks/useGetAllPost";
+import axios from 'axios';
 
 const Home = () => {
   const { user, edit } = useSelector((state) => state.user);
-  const [friendRequest, setFriendRequest] = useState(requests);
   const [suggestedFriends, setSuggestedFriends] = useState(suggest);
-  const [errMsg, setErrMsg] = useState("");
-  const [file, setFile] = useState(null);
-  const [posting, setPosting] = useState(false);
+  // const [errMsg, setErrMsg] = useState("");
+  // const [file, setFile] = useState(null);
+  // const [posting, setPosting] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [open, setOpen] = useState(false);
-  const navigate = useNavigate();
+  // const [open, setOpen] = useState(false);
+  // const navigate = useNavigate();
   const dispatch = useDispatch();
   const { theme } = useSelector((state)=> state.theme);
   const [selectedPost, setSelectedPost] = useState(null);
+
+  // useGetAllPost();
+  // const posts = useSelector((state) => state.posts?.posts);
+
+  const [posts, setPosts] = useState([]);
+  
+  useEffect(() => {
+    axios.get('https://localhost:7200/api/Post/all')
+      .then(response => {
+        setPosts(response.data);
+      })
+      .catch(error => {
+        console.error(error);
+      });
+  }, []);
+
+  // const handlePostClick = (postId) => {
+  //     console.log('Post clicked:', postId);
+  // };
 
   const handlePostClick = (postId) => {
     const post = posts.find((p) => p._id === postId);
@@ -82,12 +99,12 @@ const Home = () => {
               ) : posts?.length > 0 ? (
                   posts.map((post) => (
                       <PostCard
-                          key={post?._id}
+                          key={post?.postID}
                           post={post}
                           user={user}
                           deletePost={() => {}}
                           likePost={() => {}}
-                          onClick={() => handlePostClick(post._id)} 
+                          onClick={() => handlePostClick(post.postID)} 
                       />
                   ))
               ) : (
@@ -96,15 +113,15 @@ const Home = () => {
                   </div>
               )}
 
-              {/* {selectedPost && (
+              {selectedPost && (
                   <PostDetail post={selectedPost} onClose={handleClosePostDetail} user={user} /> // Render the PostDetail modal
-              )} */}
+              )}
           </div>
 
           {/* RIGHT */}
           <div className='hidden w-1/4 h-full lg:flex flex-col gap-8 overflow-y-auto mt-10'>
             {/* FRIEND REQUEST */}
-            <div className='w-full bg-primary shadow-sm rounded-lg px-6 py-5 border'>
+            {/* <div className='w-full bg-primary shadow-sm rounded-lg px-6 py-5 border'>
               <div className='flex items-center justify-between text-xl text-ascent-1 pb-2 border-b border-[#66666645]'>
                 <span> Friend Request</span>
                 <span>{friendRequest?.length}</span>
@@ -145,7 +162,7 @@ const Home = () => {
                   </div>
                 ))}
               </div>
-            </div>
+            </div> */}
 
             {/* SUGGESTED FRIENDS */}
             <div className='w-full bg-primary shadow-sm rounded-lg px-5 py-5 border'>

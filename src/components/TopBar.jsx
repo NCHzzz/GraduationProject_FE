@@ -24,9 +24,6 @@ const TopBar = () => {
     dispatch(SetTheme(themeValue)); // Dispatch the action to change theme
   };
 
-  // useEffect(() => {
-  //   document.body.setAttribute('data-theme', theme);
-  // }, [theme]);
 
   const handleSearch = async (data) => {};
 
