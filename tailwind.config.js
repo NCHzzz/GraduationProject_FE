@@ -1,10 +1,15 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
   content: [
-    './src/**/*.{js,jsx,ts,tsx}',  //Make sure your paths are correct
+    './src/**/*.{js,jsx,ts,tsx}',
   ],
   theme: {
     extend: {
+      screens: {
+        xs: '480px',
+        sm: '640px',
+        md: '768px',
+      },
       colors: {
         customOrange: '#d2511f'
       },
@@ -20,7 +25,6 @@ module.exports = {
         background: '#000000',
         color: '#ffffff',
         primary: '#1e1e1e',
-
       }
     },
   },

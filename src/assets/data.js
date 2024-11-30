@@ -6,8 +6,8 @@ export const user = {
   friends: [
     {
       _id: "64df3aec4180b81adfe41d32",
-      firstName: "John",
-      lastName: "Bruce",
+      firstName: "Khanh",
+      lastName: "Duy",
       email: "john@gmail.com",
       friends: ["64df3c064180b81adfe41d4b", "64df39704180b81adfe41d0b"],
       views: [],
@@ -20,8 +20,8 @@ export const user = {
     },
     {
       _id: "64df39704180b81adfe41d0b",
-      firstName: "James",
-      lastName: "Jackson",
+      firstName: "Gia",
+      lastName: "Huy",
       email: "james@gmail.com",
       friends: ["64df3c064180b81adfe41d4b", "64df3aec4180b81adfe41d32"],
       views: [
@@ -41,8 +41,8 @@ export const user = {
     },
     {
       _id: "64df424b4a4c0d47b5369f65",
-      firstName: "User",
-      lastName: "One",
+      firstName: "Tuan",
+      lastName: "Anh",
       email: "user!@gmail.com",
       friends: ["64df3c064180b81adfe41d4b"],
       views: [],
@@ -93,24 +93,24 @@ export const user = {
 export const friends = [
   {
     _id: "64df3aec4180b81adfe41d32",
-    firstName: "John",
-    lastName: "Bruce",
+    firstName: "Khanh",
+    lastName: "Duy",
     email: "john@gmail.com",
     profileUrl:
       "https://res.cloudinary.com/djs3wu5bg/image/upload/v1683874470/cld-sample.jpg",
   },
   {
     _id: "64df39704180b81adfe41d0b",
-    firstName: "James",
-    lastName: "Jackson",
+    firstName: "Tuan",
+    lastName: "Anh",
     email: "james@gmail.com",
     location: "Mumbai, India",
     profession: "Full-Stack Developer",
   },
   {
     _id: "64df424b4a4c0d47b5369f65",
-    firstName: "User",
-    lastName: "One",
+    firstName: "Gia",
+    lastName: "Huy",
     email: "user!@gmail.com",
   },
 ];

@@ -1,232 +1,553 @@
-import React, { useState, useDispatch, useEffect } from "react";
-import { Link } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import moment from "moment";
 import { NoProfile } from "../assets";
 import { BiComment, BiLike, BiSolidLike, BiDislike, BiArchive, BiSolidDislike, BiSolidArchive } from "react-icons/bi";
 import Loading from "./Loading";
-import { postComments, posts } from "../assets/data";
-import { BsPersonFillAdd } from "react-icons/bs";
 import PostDetail from "./PostDetail";
 import { useSelector } from "react-redux";
-import axios from "axios";
+import { AiOutlinePlus, AiOutlineMinus } from 'react-icons/ai';
+import { jwtDecode } from "jwt-decode";
+import { useInView } from "react-intersection-observer";
+import OtherUserProfile from "../pages/OtherUserProfile";
+import api from "../api";
+import signalRConnection from "../SignalRService";
+import signalRService from "../SignalRService";
+import connection from "../SignalRService";
+import { set } from "react-hook-form";
 
-const PostCard = ({ post, user, deletePost, likePost, onClick }) => { 
+const NotificationPopup = ({ message }) => {
+  return (
+      <div className="fixed top-4 right-4 bg-green-500 font-semibold text-white px-4 py-2 rounded shadow-lg z-50">
+          <p>{message}</p>
+      </div>
+  );
+};
+const PostCard = ({ post, user }) => { 
   const [showComments, setShowComments] = useState(0);
-  const [comments, setComments] = useState([]);
   const [loading, setLoading] = useState(false);
   const [selectedPost, setSelectedPost] = useState(null);
+  const [selectedUser, setSelectedUser] = useState(null);
   const { theme } = useSelector((state)=> state.theme);
-  
   const [userProfile, setUserProfile] = useState([]);
-  const userId = post?.userID;
+  const [postUserProfile, setPostUserProfile] = useState([]);
+  const [userLikeStatus, setUserLikeStatus] = useState(false); 
+  const [userDislikeStatus, setUserDislikeStatus] = useState(false); 
+  const [userSaveStatus, setUserSaveStatus] = useState(false); 
+  const [isLoaded, setIsLoaded] = useState(false);
+  const navigate = useNavigate();
+  const [isFollowing, setIsFollowing] = useState(false); 
+  const { ref, inView } = useInView({triggerOnce: true, threshold: 0.8, });
+  const [notifications, setNotifications] = useState([]);
+  const [notificationMessage, setNotificationMessage] = useState('');
+  const [popupVisible, setPopupVisible] = useState(false); 
+  const [totalLikes, setTotalLikes] = useState(post.totalLikes); 
+  const [totalDislikes, setTotalDislikes] = useState(post.totalDislikes); 
+  const [totalSaved, setTotalSaved] = useState(0); 
+  const [reactionCounts, setReactionCounts] = useState({
+    totalLikes: post.totalLikes,
+    totalDislikes: post.totalDislikes,
+  });
+  const [followerCount, setFollowerCount] = useState(0);
+  const token = localStorage.getItem('token');
+  let userId = null;
+  if (token) {
+    const decodedToken = jwtDecode(token);
+    userId = decodedToken.sub;
+  } else {
+    console.log('No token found!');
+  }
+
+  const saveInteractionStatus = (postID, status) => {
+    localStorage.setItem(`post_${postID}_status`, JSON.stringify(status));
+  };
+  
+  const getInteractionStatus = (postID) => {
+    const status = localStorage.getItem(`post_${postID}_status`);
+    return status ? JSON.parse(status) : null;
+  };
 
   useEffect(() => {
-    axios.get(`https://localhost:7200/api/User/${userId}`)
-      .then(response => {
-        setUserProfile(response.data);
-      })
-      .catch(error => {
-        console.error(error);
-      });
-  }, []);
+    const savedStatus = getInteractionStatus(post.postID);
+    if (savedStatus) {
+      setUserLikeStatus(savedStatus.likeStatus);
+      setUserDislikeStatus(savedStatus.dislikeStatus);
+      setUserSaveStatus(savedStatus.saveStatus);
+    }
+  }, [post.postID]);
 
+  useEffect(() => {
+      signalRConnection.on("ReceiveNotification", (message) => {
+          if(userId === post.userID) {
+          // setNotifications(prevNotifications => [...prevNotifications, message]);
+          setNotificationMessage(message);
+          setPopupVisible(true);
+          setTimeout(() => setPopupVisible(false), 3000);
+          }
+      });
+
+      signalRConnection.on("UpdateReactionCounts", (postId, totalLikes, totalDislikes) => {
+        if(postId === post.postID) {
+          setReactionCounts({ totalLikes, totalDislikes });
+        }
+        // if (userId === post.userID && postId === post.postID) {
+        //   if (totalLikes > reactionCounts.totalLikes) {
+        //     setNotificationMessage(`Your post has been liked!`);
+        //     setPopupVisible(true);
+        //     setTimeout(() => setPopupVisible(false), 3000);
+        //   } else if (totalDislikes > reactionCounts.totalDislikes) {
+        //     setNotificationMessage(`Your post has been disliked!`);
+        //     setPopupVisible(true);
+        //     setTimeout(() => setPopupVisible(false), 3000);
+        //   }
+        // }
+      });
+
+      signalRConnection.on("UpdateSaveCounts", (postId, totalSaves) => {
+        if (postId === post.postID) {
+          setTotalSaved(totalSaves);
+        }
+        // if (postId === post.postID && userId === post.userID && totalSaves > totalSaved) {
+        //   setNotificationMessage("You post has been saved!");
+        //   setPopupVisible(true);
+        //   setTimeout(() => setPopupVisible(false), 3000);
+        // }
+      });
+
+      return () => {
+          signalRConnection.off("ReceiveNotification");
+          signalRConnection.off("UpdateReactionCounts");
+          signalRConnection.off("UpdateSaveCounts");
+      };
+  }, [post.postID, userId, reactionCounts.totalLikes, reactionCounts.totalDislikes, totalSaved]);
+
+  useEffect(() => {
+    if (inView) {
+      setIsLoaded(true);
+    }
+  }, [inView]);
+
+  useEffect(() => {
+    // if (isLoaded) {
+      api
+        .get(`/api/User/${userId}`, {headers: {Authorization: `Bearer ${token}`,},})
+        .then((response) => {setUserProfile(response.data);})
+        .catch((error) => {console.error(error);});
+      api
+        .get(`/api/User/${post.userID}`, {headers: {Authorization: `Bearer ${token}`,},})
+        .then((response) => {setPostUserProfile(response.data);})
+        .catch((error) => {console.error(error);});
+      api
+        .get(`/api/Follow/followersCount?userId=${post.userID}`, {headers: {Authorization: `Bearer ${token}`,},})
+        .then((response) => {setFollowerCount(response.data);})
+        .catch((error) => {console.error(error);});
+      api
+        .get(`/api/Post/save/count?postId=${post.postID}`, {headers: {Authorization: `Bearer ${token}`,},})
+        .then((response) => {setTotalSaved(response.data);})
+        .catch((error) => {console.error(error);});
+    // }
+  }, [isLoaded, userId, post.userID, token]);
+
+  useEffect(() => {
+    if (userId && post.userID) {
+      checkFollowingStatus();
+    }
+  }, [userId, post.userID]);
+
+  // Check if the user is following the post's author
+  const checkFollowingStatus = async () => {
+    try {
+      const response = await api.get(`/api/Follow/isFollowing?followUserId=${post.userID}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setIsFollowing(response.data);
+    } catch (error) {
+      console.error('Error checking follow status:', error);
+    }
+  };
 
   const handleClosePostDetail = () => {
     setSelectedPost(null);
   };
 
-  // const handlePostClick = (postId) => {
-  //   const post = posts.find((p) => p.postID === postId);
-  //   setSelectedPost(post);
-  // };
-
   const handleReadMore = () => {
-    setSelectedPost(post); // Set the selected post to show details
+    setSelectedPost(post); 
   };
+
+  const handleNavigateProfile = () => {
+    if (postUserProfile.id) {
+      navigate(`/profile/${postUserProfile.id}`);
+    }
+  }
 
   const getComments = async () => {
     setLoading(true);
-    setComments(postComments); 
     setLoading(false);
   };
 
   const handleLike = async () => {
+    const newLikeStatus = !userLikeStatus;
+    const newTotalLikes = newLikeStatus ? totalLikes + 1 : totalLikes - 1;
+    // Update the like status
+    setUserLikeStatus(newLikeStatus);
+    setTotalLikes(newTotalLikes);
+    setReactionCounts((prevCounts) => ({
+      ...prevCounts,
+      totalLikes: newTotalLikes,
+    }));
+    saveInteractionStatus(post.postID, {
+      likeStatus: newLikeStatus,
+      dislikeStatus: userDislikeStatus,
+      saveStatus: userSaveStatus,
+    });
+    try {
+      const likeResponse = await api.post(`/api/Post/react?postId=${post.postID}&isLike=true`, 
+        { userId: user.id },
+        { headers: {Authorization: `Bearer ${token}`,}});
 
+    // // If the like was successful, send a notification
+    // if (likeResponse.status === 200 && newLikeStatus) {
+    //   const notificationMessage = `@${userProfile.userName} liked your post!`;
+    //   await api.post(
+    //     `/api/Notification`,
+    //     { postID: post.postID,
+    //       receiveUserID: post.userID,
+    //        message: notificationMessage,},
+    //     { headers: { Authorization: `Bearer ${token}`,},});
+
+      
+    // } else if (likeResponse.status !== 200) {
+    //   // Revert the like status if the like action failed
+    //   setUserLikeStatus(!newLikeStatus);
+    //   setTotalLikes(newTotalLikes - (newLikeStatus ? 1 : -1));
+    // }
+    } catch (error) {console.error(error);}
+  };
+  
+  const handleDislike = async () => {
+    const newDislikeStatus = !userDislikeStatus;
+    const newTotalDislikes = newDislikeStatus ? totalDislikes + 1 : totalDislikes - 1;
+    // Update the dislike status
+    setUserDislikeStatus(newDislikeStatus);
+    setTotalDislikes(newTotalDislikes);
+    setReactionCounts((prevCounts) => ({
+      ...prevCounts,
+      totalDislikes: newTotalDislikes,
+    }));
+    saveInteractionStatus(post.postID, {
+      likeStatus: userLikeStatus,
+      dislikeStatus: newDislikeStatus,
+      saveStatus: userSaveStatus,
+    });
+
+    try {
+      const dislikeResponse = await api.post(`/api/Post/react?postId=${post.postID}&isLike=false`, 
+        { userId: user.id },
+        { headers: { Authorization: `Bearer ${token}`, }});
+      // If the dislike was successful, send a notification
+      // if (dislikeResponse.status === 200 && newDislikeStatus) {
+      //   const notificationMessage = `@${userProfile.userName} disliked your post!`;
+      //   await api.post(
+      //     `/api/Notification`,
+      //     { receiveUserID: post.userID, message: notificationMessage,},
+      //     { headers: { Authorization: `Bearer ${token}`,},});
+
+      //   setPopupVisible(true);
+      //   setTimeout(() => setPopupVisible(false), 3000); 
+      // } else if (dislikeResponse.status !== 200) {
+      //   // Revert the dislike status if the dislike action failed
+      //   setUserLikeStatus(!newDislikeStatus);
+      //   setTotalLikes(newTotalDislikes - (newDislikeStatus ? 1 : -1));
+      // }
+    } catch (error) { console.error(error);}
   };
 
-  // Sample 'createdAt' timestamp from your database
-  const createdAt = post.createdAt;
-  // Calculate the difference using Moment.js
-  const now = moment(); // Current time
-  const postTime = moment(createdAt); // Post creation time
-  // Get the time difference in minutes
-  const diffMinutes = now.diff(postTime, 'minutes');
-  // Determine the display format
-  let displayTime;
-  if (diffMinutes < 60) {
-    displayTime = `${diffMinutes} minute${diffMinutes !== 1 ? 's' : ''} ago`;
-  } else if (diffMinutes >= 60 && diffMinutes < 1440) { // 1440 minutes = 24 hours
-    const diffHours = now.diff(postTime, 'hours');
-    displayTime = `${diffHours} hour${diffHours !== 1 ? 's' : ''} ago`;
-  } else {
-    const diffDays = now.diff(postTime, 'days');
-    displayTime = `${diffDays} day${diffDays !== 1 ? 's' : ''} ago`;
-  }
+  const handleSavePost = async () => {
+    const newSaveStatus = !userSaveStatus; 
+    const newTotalSave = newSaveStatus ? totalSaved + 1 : totalSaved - 1;
 
+    // Optimistically update the state
+    setUserSaveStatus(newSaveStatus);
+    setTotalSaved(newTotalSave);
+    saveInteractionStatus(post.postID, {
+      likeStatus: userLikeStatus,
+      dislikeStatus: userDislikeStatus,
+      saveStatus: newSaveStatus,
+    });
 
-  return (
-    <div className={`${theme === "light" ? "bg-white text-black border-black hover:bg-gray-300 " : "bg-black text-white hover:bg-gray-600 "} mb-2 bg-primary p-4 rounded-xl border `}>
-      <div onClick={onClick} className="block cursor-pointer">
-        <div className='flex gap-3 items-center mb-2'>
-          <Link to={`/profile/${userId}`}>
-            <img
-              src={userProfile?.profileUrl ?? NoProfile}
-              alt={userProfile?.userName}
-              className='w-14 h-14 object-cover rounded-full'
-            />
-          </Link>
+    try {
+        if (newSaveStatus) {
+            // API call to save the post
+            const response = await api.post(
+                `/api/Post/save?postId=${post.postID}`,
+                {},
+                {
+                    headers: { Authorization: `Bearer ${token}` },
+                }
+            );
+            // Handle the response
+            if (response.data.flag && response.data.data === true) {
+                console.log(response.data.message); // Log success message
+            } else {
+                throw new Error("Failed to save the post. Reverting changes.");
+            }
+        } else {
+            // API call to unsave the post
+            const response = await api.delete(
+                `/api/Post/unsave?postId=${post.postID}`,
+                {
+                    headers: { Authorization: `Bearer ${token}` },
+                }
+            );
 
-          <div className='w-full flex justify-between'>
-            <div className="w-full">
-              <div className='flex items-center'>
-                <Link to={"/profile/" + userId}>
-                  <p className='font-medium text-lg text-ascent-1'>
-                    {userProfile?.userName ?? "User"}
-                  </p>
-                </Link>
-                <button
-                  className='bg-customOrange text-sm text-white p-1 rounded hover:bg-white hover:text-customOrange ml-2'
-                  onClick={(handleFollow) => {
-                  }}
-                >
-                  <BsPersonFillAdd size={12} />
-                </button>
-              </div>
-              <span className='text-ascent-2'>{displayTime}</span>
+            // Handle the response
+            if (response.data.flag && response.data.data === true) {
+                console.log(response.data.message); // Log success message
+            } else {
+                throw new Error("Failed to unsave the post. Reverting changes.");
+            }
+        }
+    } catch (error) {
+        console.error("Error in handleSavePost:", error);
 
-            </div>
-          </div>
-        </div>
-
-        <div>
-          <h1 className={`${theme === "light" ? " text-black" : " text-white "} text-xl font-bold mb-2 `}>{post?.title}</h1>
-          <p className= {`${theme === "light" ? " text-black" : " text-white "} text-m font-semi mb-2 `}>#{post?.hashtags}</p>
-          {post?.imageUrl && (
-            <img
-              src={post?.imageUrl}
-              alt='image'
-              className='w-100 mt-2 rounded-lg'
-            />
-          )}
-          <div className="">
-            <button 
-              className=" bg-customOrange text-sm text-white p-1 rounded hover:bg-white hover:text-customOrange mt-2"
-              // onClick={() => handlePostClick(post?.postID)} 
-              onClick={handleReadMore}
-            >
-              Read More
-            </button>
-          </div>
-
-          {selectedPost && (
-            <PostDetail post={selectedPost} onClose={handleClosePostDetail} user={userProfile} />
-          )}
-
-        </div>
-      </div>
-
-      <div className='mt-4 flex justify-items-start items-center px-3 py-1 text-ascent-2 text-base border-t border-[#66666645]'>
-        <p className='flex mr-5 gap-1 items-center text-base cursor-pointer' onClick={handleLike}>
-          {post?.likes?.includes(user?.id) ? (
-            <BiSolidLike size={20} color='#d2511f' />
-          ) : (
-            <BiLike size={20} />
-          )}
-          {post?.likes?.length}
-        </p>
-
-        <p className='flex mr-5 gap-1 items-center text-base cursor-pointer' onClick={handleLike}>
-          {post?.likes?.includes(user?.id) ? (
-            <BiSolidDislike size={20} color='#d2511f' />
-          ) : (
-            <BiDislike size={20} />
-          )}
-          {post?.likes?.length} 
-        </p>
-        
-        <p
-          className='flex mr-5 gap-1 items-center text-base cursor-pointer'
-          onClick={() => {
-            setShowComments(showComments === post.postID ? null : post.postID);
-            getComments(post?._id);
-          }}
-        >
-          <BiComment size={20} />
-          {post?.comments?.length} 
-        </p>
-
-        <p className='flex mr-5 gap-1 items-center text-base cursor-pointer' onClick={handleLike}>
-          {post?.likes?.includes(user?._id) ? (
-            <BiSolidArchive size={20} color='#d2511f' />
-          ) : (
-            <BiArchive size={20} />
-          )}
-          {post?.likes?.length} 
-        </p>
-      </div>
-
-      {/* COMMENTS */}
-      {showComments === post?.postID && (
-        <div className='w-full mt-4 border-t border-[#66666645] pt-4'>
-          {loading ? (
-            <Loading />
-          ) : comments?.length > 0 ? (
-            comments.map((comment) => (
-              <div className='w-full py-2' key={comment?._id}>
-                <div className='flex gap-3 items-center mb-1'>
-                  <Link to={"/profile/" + comment?.userId?._id}>
-                    <img
-                      src={comment?.userId?.profileUrl ?? NoProfile}
-                      alt={comment?.userId?.firstName}
-                      className='w-10 h-10 rounded-full object-cover'
-                    />
-                  </Link>
-                  <div>
-                    <Link to={"/profile/" + comment?.userId?._id}>
-                      <p className='font-medium text-base text-ascent-1'>
-                        {comment?.userId?.firstName} {comment?.userId?.lastName}
-                      </p>
-                    </Link>
-                    <span className='text-ascent-2 text-sm'>
-                      {moment(comment?.createdAt ?? "2023-05-25").fromNow()}
-                    </span>
-                  </div>
-                </div>
-
-                <div className='ml-12'>
-                  <p className='text-ascent-2'>{comment?.comment}</p>
-                  <div className='mt-2 flex gap-6'>
-                    <p className='flex gap-2 items-center text-base text-ascent-2 cursor-pointer'>
-                      {comment?.likes?.includes(user?.userID) ? (
-                        <BiSolidLike size={20} color='#d2511f' />
-                      ) : (
-                        <BiLike size={20} />
-                      )}
-                      {comment?.likes?.length} Likes
-                    </p>
-                  </div>
-                </div>
-              </div>
-            ))
-          ) : (
-            <span className='flex text-sm py-4 text-ascent-2 text-center'>
-              No Comments, be first to comment
-            </span>
-          )}
-        </div>
-      )}
-    </div>
-  );
+        // Revert the state on failure
+        setUserSaveStatus(!newSaveStatus);
+        setTotalSaved(totalSaved);
+    }
 };
 
+
+  useEffect(() => {
+    if (userId && post.userID) {checkFollowingStatus();}
+  }, []);
+
+  const handleFollow = async (postUserProfileId) => {
+    try {
+        // API call to follow the user
+        const response = await api.post(
+            `/api/Follow/followOrUnfollow?isFollow=true`,
+            { followUserId: postUserProfileId },
+            {
+                headers: { Authorization: `Bearer ${token}` },
+            }
+        );
+
+        // Check the response
+        if (response.data.flag && response.data.data === true) {
+            setIsFollowing(true); // Update the follow state
+            console.log(response.data.message); // Log success message
+
+            // Prepare and send notification
+            const notificationMessage = `@${userProfile.userName} followed you!`;
+            const notificationResponse = await api.post(
+                `/api/Notification`,
+                {
+                    receiveUserID: postUserProfileId,
+                    message: notificationMessage,
+                },
+                {
+                    headers: { Authorization: `Bearer ${token}` },
+                }
+            );
+
+            if (notificationResponse.data.flag) {
+                console.log("Notification sent successfully:", notificationResponse.data.message);
+            } else {
+                console.error("Notification sending failed:", notificationResponse.data.message);
+            }
+        } else {
+            throw new Error("Failed to follow the user. Please try again.");
+        }
+    } catch (error) {
+        console.error("Error in handleFollow:", error);
+    }
+};
+
+  const handleUnfollow = async (postUserProfileId) => {
+    try {
+      const response = await api.post(`/api/Follow/followOrUnfollow?isFollow=false`, 
+        { followUserId: postUserProfileId },
+        { headers: { Authorization: `Bearer ${token}`,}});
+      if (response.status === 200) {
+        setIsFollowing(false);
+      }
+    } catch (error) {console.error(error);}
+  };
+
+const createdAt = post.createdAt;
+const now = moment(); 
+const postTime = moment(createdAt); 
+let displayTime;
+
+if (now.diff(postTime, 'minutes') < 60) {
+  const diffMinutes = Math.floor(now.diff(postTime, 'minutes'));
+  displayTime = `${diffMinutes} minute${diffMinutes !== 1 ? 's' : ''} ago`;
+} else if (now.diff(postTime, 'hours') < 24) {
+  const diffHours = Math.floor(now.diff(postTime, 'hours'));
+  displayTime = `${diffHours} hour${diffHours !== 1 ? 's' : ''} ago`;
+} else {
+  const diffDays = Math.floor(now.diff(postTime, 'days'));
+  displayTime = `${diffDays} day${diffDays !== 1 ? 's' : ''} ago`;
+}
+
+  return (
+    <div ref={ref}>
+      {isLoaded ? (
+            <div className={`${theme === "light" 
+                            ? "bg-white text-black hover:bg-gray-300 " 
+                            : "bg-black text-white hover:bg-gray-600 "} 
+                            bg-primary p-4 px-8 items-center justify-center border-t border-b border-t-gray-700 border-b-gray-700 `}>
+              {popupVisible && (
+                <NotificationPopup
+                    message={notificationMessage}
+                    onClose={() => setPopupVisible(false)}/>)}
+            <div className="block cursor-pointer">
+              <div className='flex gap-3 items-center mb-2'>
+                <Link to={`/profile/${postUserProfile.id}`}>
+                  <img
+                    src={postUserProfile?.profileUrl ?? NoProfile}
+                    alt={postUserProfile?.userName}
+                    className='w-8 h-8 object-cover'
+                    onClick={handleNavigateProfile}
+                  />
+                </Link>
+                <div className='w-full flex justify-between'>
+                  <div className="w-full">
+                    <div className='flex items-center'>
+                      <Link to={`/profile/${postUserProfile.id}`}>
+                        <p className='font-bold text-lg'>
+                          {postUserProfile.fullName}
+                        </p>
+                      </Link>
+                      <p className='font-light text-m ml-1 text-gray-400'>
+                          @{postUserProfile.userName}
+                        </p>
+                      <button
+                        className={`${theme === "light" ? "bg-black text-white hover:bg-white hover:text-customOrange" : "bg-white text-black hover:bg-black hover:text-customOrange"} p-1 rounded text-lg ml-2`}
+                        onClick={() => {
+                          if (isFollowing) {
+                            handleUnfollow(postUserProfile.id);  
+                          } else {
+                            handleFollow(postUserProfile.id); 
+                          }
+                        }}
+                        disabled={postUserProfile.id === userProfile.id}>
+                        {postUserProfile.id === userProfile.id ? null : isFollowing ? 
+                        (<AiOutlineMinus size={12}/>) : (<AiOutlinePlus size={12}/>)}
+                      </button>
+                    </div>
+                    <span className='text-ascent-2 text-xs'>{displayTime}</span>
+                  </div>
+                </div>
+              </div>
+      
+              <div>
+                <h1 className={`${theme === "light" ? " text-black" : " text-white "} 
+                                text-xl font-medium mb-2 ml-9`}>{post?.title}</h1>
+                <p className= {`${theme === "light" ? " text-black" : " text-white "} 
+                                text-m font-normal mb-2 ml-9 `}>#{post?.hashtags}</p>
+                {post?.imageUrl ? (
+                  <img
+                    src={post.imageUrl}
+                    alt={post?.title ?? "Post Image"}
+                    className="w-[95%] h-auto rounded-lg mb-4 ml-9"
+                  />
+                ) : (
+                  <p className="text-gray-500 italic">{null}</p>
+                )}
+                <div className="">
+                  <button 
+                    className="text-customOrange text-sm font-medium italic rounded hover:bg-white hover:text-orange-800 mt-2 ml-9"
+                    onClick={handleReadMore}>
+                    Read More..
+                  </button>
+                </div>
+                {selectedPost && (
+                  <PostDetail post={selectedPost} onClose={handleClosePostDetail} user={postUserProfile}/>
+                )}
+                {selectedUser && (
+                  <OtherUserProfile userId={selectedUser.id} />
+                )}
+              </div>
+            </div>
+            <div className='mt-4 flex justify-items-start items-center px-3 py-1 text-ascent-2 text-base ml-9'>
+              <p className='flex mr-5 gap-1 items-center text-base cursor-pointer' onClick={handleLike}>
+                 {userLikeStatus ? <BiSolidLike size={20} color='#d2511f' /> : <BiLike size={20} />}
+                 {reactionCounts.totalLikes} 
+              </p>
+              <p className='flex mr-5 gap-1 items-center text-base cursor-pointer' onClick={handleDislike}>
+                {userDislikeStatus ? <BiSolidDislike size={20} color='#d2511f' /> : <BiDislike size={20} />}
+                {reactionCounts.totalDislikes}
+              </p>
+              <p className='flex mr-5 gap-1 items-center text-base cursor-pointer'
+                onClick={() => {
+                  setShowComments(showComments === post.postID ? null : post.postID);
+                  getComments(post?._id);
+                }}>
+                <BiComment size={20}/>
+              </p>
+              <p className='flex mr-5 gap-1 items-center text-base cursor-pointer' onClick={handleSavePost}>
+                {userSaveStatus ? <BiSolidArchive size={20} color='#d2511f' /> : <BiArchive size={20} />}
+                {totalSaved}
+              </p>
+            </div>
+            {/* COMMENTS */}
+            <div>
+            {/* {showComments === post?.postID && (
+              <div className='w-full mt-4 border-t border-[#66666645] pt-4'>
+                {loading ? (
+                  <Loading />
+                ) : comments?.length > 0 ? (
+                  comments.map((comment) => (
+                    <div className='w-full py-2' key={comment?._id}>
+                      <div className='flex gap-3 items-center mb-1'>
+                        <Link to={"/profile/" + comment?.userId?._id}>
+                          <img
+                            src={comment?.userId?.profileUrl ?? NoProfile}
+                            alt={comment?.userId?.firstName}
+                            className='w-10 h-10 rounded-full object-cover'
+                          />
+                        </Link>
+                        <div>
+                          <Link to={"/profile/" + comment?.userId?._id}>
+                            <p className='font-medium text-base text-ascent-1'>
+                              {comment?.userId?.firstName} {comment?.userId?.lastName}
+                            </p>
+                          </Link>
+                          <span className='text-ascent-2 text-sm'>
+                            {moment(comment?.createdAt ?? "2023-05-25").fromNow()}
+                          </span>
+                        </div>
+                      </div>
+      
+                      <div className='ml-12'>
+                        <p className='text-ascent-2'>{comment?.comment}</p>
+                        <div className='mt-2 flex gap-6'>
+                          <p className='flex gap-2 items-center text-base text-ascent-2 cursor-pointer'>
+                            {comment?.likes ? (
+                              <BiSolidLike size={20} color='#d2511f' />
+                            ) : (
+                              <BiLike size={20} />
+                            )}
+                            {comment?.likes?.length} Likes
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <span className='flex text-sm py-4 text-ascent-2 text-center'>
+                    No Comments, be first to comment
+                  </span>
+                )}
+              </div>
+            )} */}
+            </div> 
+          </div>
+      ) : (
+        <Loading />
+      )}
+    </div> 
+  );
+};
 export default PostCard;

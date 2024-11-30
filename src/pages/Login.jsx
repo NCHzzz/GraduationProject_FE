@@ -1,32 +1,47 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
-import { useDispatch } from "react-redux";
-import { useForm } from "react-hook-form";
-import { BsShare } from "react-icons/bs";
-import { AiOutlineInteraction } from "react-icons/ai";
-import { ImConnection } from "react-icons/im";
-import { CustomButton, Loading, TextInput } from "../components";
-import { BgImage, logo_without_background } from "../assets";
+import { CustomButton, Loading } from "../components";
+import { logo_without_background } from "../assets";
+import { useNavigate  } from 'react-router-dom'; // For navigation after login
+import api from "../api";
 
 const Login = () => {
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-  } = useForm({
-    mode: "onChange",
-  });
-  const onSubmit = async (data) => {};
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [errorMessage, setErrorMessage] = useState('');
+  const [loading, setLoading] = useState(false);
+  const navigate  = useNavigate (); 
 
-  const [errMsg, setErrMsg] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const dispatch = useDispatch();
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setErrorMessage('');
+
+    console.log(email);
+    console.log(password);
+
+    try {
+      const response = await api.post('/api/Auth/login', {
+        email,
+        password,
+      });
+      if (response.data.token) {
+        localStorage.setItem('token', response.data.token);
+        navigate('/home'); 
+        console.log("Token after logging: ",response.data.token);
+      }
+      } catch (error) {
+      console.error(error); 
+      setErrorMessage(error.response?.data || 'An error occurred during login.');
+      } finally {
+      setLoading(false);
+      }
+  };
 
   return (
     <div className='bg-bgColor w-full h-[100vh] flex items-center justify-center p-6'>
-      <div className='w-full md:w-2/3 h-fit lg:h-full 2xl:h-5/6 py-8 lg:py-0 flex bg-primary rounded-xl overflow-hidden shadow-xl border border-black'>
-        {/* LEFT */}
-        <div className='w-full lg:w-1/2 h-full p-10 2xl:px-20 flex flex-col justify-center '>
+      <div className='w-full md:w-[40%] h-fit lg:h-full 2xl:h-5/6 py-8 lg:py-0 flex bg-primary rounded-xl overflow-hidden shadow-xl border border-black'>
+        <div className='w-full h-full p-5 2xl:px-15 flex flex-col justify-center '>
           <div className='w-full flex gap-2 items-center mb-6'>
             <img
               src={logo_without_background}
@@ -36,48 +51,48 @@ const Login = () => {
           </div>
           
           <form
-            className='py-1 flex flex-col gap-5='
-            onSubmit={handleSubmit(onSubmit)}
+            className='py-1 flex flex-col'
+            onSubmit={handleSubmit}
           >
-            <TextInput
+            <div>
+              <h3 className='text-xl font-semibold'>Email</h3>
+              <input className="w-full border rounded-full p-2"
               name='email'
               placeholder='email@example.com'
               label='Email'
               type='email'
-              register={register("email", {
-                required: "Email Address is required",
-              })}
-              styles='w-full rounded-full'
-              labelStyle='ml-2'
-              error={errors.email ? errors.email.message : ""}
-            />
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              />
+            </div>
 
-            <TextInput
+            <div className="mt-3">
+              <h3 className='text-xl font-semibold'>Password</h3>
+              <input className="w-full border rounded-full p-2"
               name='password'
               label='Password'
               placeholder='Password'
               type='password'
-              styles='w-full rounded-full'
-              labelStyle='ml-2'
-              register={register("password", {
-                required: "Password is required!",
-              })}
-              error={errors.password ? errors.password?.message : ""}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
             />
-
-            {errMsg?.message && (
+            </div>
+            
+            {errorMessage && (
               <span
                 className={`text-sm ${
-                  errMsg?.status == "failed"
+                  "error-message"
                     ? "text-[#f64949fe]"
                     : "text-[#2ba150fe]"
                 } mt-0.5`}
               >
-                {errMsg?.message}
+                {errorMessage}
               </span>
             )}
-
-            {isSubmitting ? (
+            {/* {errorMessage && <p className="error-message">{errorMessage}</p>}    */}
+            {loading ? (
               <Loading />
             ) : (
               <CustomButton
@@ -87,7 +102,6 @@ const Login = () => {
               />
             )}
           </form>
-
           <p className='text-ascent-2 text-sm text-center mt-3'>
             Don't have an account?
             <Link
@@ -104,44 +118,7 @@ const Login = () => {
           >
             Forgot Password ?
           </Link>
-
         </div>
-
-        {/* RIGHT */}
-        <div className='hidden w-1/2 h-full lg:flex flex-col items-center justify-center bg-customOrange'>
-          <div className='relative w-full flex items-center justify-center'>
-            <img
-              src={BgImage}
-              alt='Bg Image'
-              className='w-48 2xl:w-64 h-48 2xl:h-64 rounded-full object-cover'
-            />
-
-            <div className='absolute flex items-center gap-1 bg-white right-10 top-10 py-2 px-5 rounded-full'>
-              <BsShare size={14} />
-              <span className='text-xs font-medium'>Share</span>
-            </div>
-
-            <div className='absolute flex items-center gap-1 bg-white left-10 top-6 py-2 px-5 rounded-full'>
-              <ImConnection />
-              <span className='text-xs font-medium'>Connect</span>
-            </div>
-
-            <div className='absolute flex items-center gap-1 bg-white left-12 bottom-6 py-2 px-5 rounded-full'>
-              <AiOutlineInteraction />
-              <span className='text-xs font-medium'>Interact</span>
-            </div>
-          </div>
-
-          <div className='mt-16 text-center'>
-            <p className='text-white text-base'>
-              Connect with friends & have share for fun
-            </p>
-            <span className='text-sm text-white/80'>
-              Share memories with friends and the world.
-            </span>
-          </div>
-        </div>
-        
       </div>
     </div>
   );

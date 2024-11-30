@@ -1,29 +1,43 @@
 import React, { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
 import api from '../api';
-import Map from './Map';
+import Map from '../components/Map';
 import { jwtDecode } from "jwt-decode";
+import LeftSideBar from '../components/LeftSideBar'; 
+import Small_LeftSideBar from '../components/Small_LeftSideBar';
+import { Link } from 'react-router-dom';
+import { NoProfile } from "../assets";
+import { BsPersonFillAdd } from "react-icons/bs";
+import { suggest} from "../assets/data";
+import { HubConnectionBuilder, LogLevel } from "@microsoft/signalr";
 
-const CreatePost = ({ open, onClose, setOpen }) => {
+const NotificationPopup = ({ message }) => {
+    return (
+        <div className="fixed top-4 right-4 bg-green-500 font-semibold text-white px-4 py-2 rounded shadow-lg z-50">
+            <p>{message}</p>
+        </div>
+    );
+};
+
+const CreatePost = () => {
     const { theme } = useSelector((state) => state.theme);
-    const user = useSelector((state) => state.user);
-    const userID = "0f3d1261-e53e-4539-b36f-6f7e0ce2f0bf"; 
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState('');
     const [notification, setNotification] = useState('');
     const [shortDescription, setShortDescription] = useState('');
     const [coordinates, setCoordinates] = useState({ lat: 0, lng: 0 });
     const [images, setImages] = useState(''); 
-    const [hashtags, setHashtags] = useState(''); // Track the hashtags
+    const [hashtags, setHashtags] = useState('');
     const [address, setAddress] = useState("");
     const [uploading, setUploading] = useState(false);
+    const [suggestedFriends, setSuggestedFriends] = useState(suggest);
+    const [popupVisible, setPopupVisible] = useState(false); 
 
     const token = localStorage.getItem('token');
     let userId = null;
     if (token) {
       const decodedToken = jwtDecode(token);
       userId = decodedToken.sub;
-      // console.log('User ID:', userId);
     } else {
       console.log('No token found!');
     }
@@ -36,7 +50,7 @@ const CreatePost = ({ open, onClose, setOpen }) => {
             return;
         }
         const postData = {
-            userID: userID, 
+            userID: userId, 
             title: title,
             content: description,
             location: address,
@@ -44,8 +58,6 @@ const CreatePost = ({ open, onClose, setOpen }) => {
             shortDescription: shortDescription,
             hashtagNames: [hashtags]
         };
-        console.log("post data: ",postData); // Check if imageUrls contains valid URLs
-
 
         try {
             console.log('Sending POST request to API...');
@@ -64,9 +76,10 @@ const CreatePost = ({ open, onClose, setOpen }) => {
             setAddress('');
             setImages('');
             setShortDescription('');
-            setOpen(false);
-            setNotification('Post created successfully!');
-            setTimeout(() => setNotification(''), 3000);
+
+            setPopupVisible(true);
+            setTimeout(() => setPopupVisible(false), 3000); // Hide popup after 3 seconds
+
         } catch (error) {
             console.error('Error creating post:', error);
             if (error.response) {
@@ -82,47 +95,6 @@ const CreatePost = ({ open, onClose, setOpen }) => {
         }
     };
 
-    //Upload multiple images
-    // const handleImageChange = (e) => {
-    //     const newImages = Array.from(e.target.files); // Convert FileList to an array
-    //     setImages((prevImages) => [...prevImages, ...newImages]); // Append new images to the existing array
-    // };
-
-
-    // const handleImageChange = async (e) => {
-    //     setUploading(true); // Start the loader
-    //     const files = Array.from(e.target.files);
-
-    //     const cloudinaryUrls = await Promise.all(
-    //         files.map(async (file) => {
-    //             const formData = new FormData();
-    //             formData.append("file", file);
-    //             formData.append("upload_preset", "foodtalk");
-    //             try {
-    //                 const response = await api.post(
-    //                     `https://api.cloudinary.com/v1_1/dre3daq6i/image/upload`,
-    //                     formData
-    //                 );
-    //                 return response.data.secure_url;
-    //             } catch (error) {
-    //                 console.error("Error uploading to Cloudinary:", error);
-    //                 return null;
-    //             }
-    //         })
-    //     );
-
-    //     console.log("cloudinaryUrls: ",cloudinaryUrls); // Ensure valid URLs
-
-
-    //     setUploading(false); // Stop the loader
-    //     // setImages((prevImages) => {
-    //     //     const updatedImages = [...prevImages, ...cloudinaryUrls.filter(Boolean)];
-    //     //     console.log('Updated images array:', updatedImages); // Debug
-    //     //     return updatedImages;
-    //     // });
-    //     setImages((prevImages) => [...prevImages, ...cloudinaryUrls.filter(Boolean)]);
-    // };
-
     const handleImageChange = async (e) => {
         setUploading(true); // Start the loader
         const file = e.target.files[0]; // Select only the first file
@@ -131,7 +103,6 @@ const CreatePost = ({ open, onClose, setOpen }) => {
             setUploading(false);
             return;
         }
-    
         const formData = new FormData();
         formData.append("file", file);
         formData.append("upload_preset", "foodtalk");
@@ -153,22 +124,27 @@ const CreatePost = ({ open, onClose, setOpen }) => {
         setImages(""); 
     };
     
-
-    if (!open) return null;
-
-
-    return (
-        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
-            <div className={`${theme === "light" ? "bg-white text-black border-black" : "bg-black text-white border"} file:rounded-lg rounded-lg p-4 w-3/4 md:w-1/2 max-h-[80vh] overflow-y-auto z-[10000]`}>
-                <button className='absolute top-5 right-5 text-lg' onClick={onClose}>
-                    &times;
-                </button>
-                {notification && (
-                    <div className="fixed top-0 left-0 right-0 bg-green-500 text-white text-center py-2">
-                        {notification}
-                    </div>
-                )}
-                <form onSubmit={handlePostSubmit} className='z-[10000]'>
+  return (
+    <>
+        {popupVisible && (
+            <NotificationPopup
+                message="Post created successfully!"
+                onClose={() => setPopupVisible(false)}
+            />
+        )}
+      <div className={`w-full h-full px-0 lg:px-0  bg-bgColor ${theme === "light" ? "bg-white text-black" : "bg-black text-white"} lg:rounded-lg h-screen overflow-hidden `}>
+        {/* <TopBar /> */}
+        <div className='w-full flex h-full'>
+          {/* LEFT */}
+          <div className='hidden xs:w-[20%] px-4 h-full md:flex sm:hidden flex-col gap-6 overflow-x-auto items-center'>
+            <LeftSideBar />
+          </div>
+          <div className='flex w-[14%] md:hidden '>
+            <Small_LeftSideBar />
+          </div>
+          {/* CENTER */}
+          <div className='w-full flex h-screen md:w-[60%] sm:w-[100%] border-l border-r border-l-gray-700 border-r-gray-700 flex-col gap-0 overflow-y-auto pt-4 p-10'>
+            <form onSubmit={handlePostSubmit}>
                     <h2 className="text-xl font-bold mb-4">Title</h2>
                     <textarea
                         className={`${theme === "light" ? "bg-white" : "bg-grey"} text-black w-full p-2 rounded border`}
@@ -268,12 +244,6 @@ const CreatePost = ({ open, onClose, setOpen }) => {
                         )}
                     </div>
                     <div className="flex justify-end gap-2 mt-4">
-                        <button type="button" 
-                            className="px-4 py-2 bg-gray-400 rounded hover:bg-gray-700" 
-                            onClick={() => setOpen(false)}
-                        >
-                            Cancel
-                        </button>
                         <button type="submit" 
                             className="px-4 py-2 bg-customOrange text-white rounded hover:bg-orange-900"
                         >
@@ -281,9 +251,61 @@ const CreatePost = ({ open, onClose, setOpen }) => {
                         </button>
                     </div>
                 </form>
-            </div>
+          <div >
         </div>
-    );
-};
+            
+          </div>
 
-export default CreatePost;
+          {/* RIGHT */}
+          <div className='hidden w-[30%]  h-full lg:flex flex-col overflow-y-auto'>
+            <div className={`w-[90%]  px-0 lg:px-2 mt-3 bg-bgColor ${theme === "light" ? "bg-white text-black" : "bg-black text-white"}  lg:rounded-lg h-screen overflow-hidden `}>
+                
+                <div className='p-4 rounded-2xl my-4 border border-gray-700'>
+                    <h1 className='font-bold text-lg'>Who to follow</h1>
+                    <div className='w-full flex flex-col gap-4 pt-4'>
+                        {suggestedFriends?.map((friend) => (
+                            <div
+                            className='flex items-center justify-between'
+                            key={friend._id}
+                            >
+                            <Link
+                                to={"/profile/" + friend?._id}
+                                key={friend?._id}
+                                className='w-full flex gap-4 items-center cursor-pointer'
+                            >
+                                <img
+                                src={friend?.profileUrl ?? NoProfile}
+                                alt={friend?.firstName}
+                                className='w-10 h-10 object-cover rounded-full'
+                                />
+                                <div className='flex-1 '>
+                                <p className='text-base font-medium text-ascent-1'>
+                                    {friend?.firstName} {friend?.lastName}
+                                </p>
+                                <span className='text-sm text-ascent-2'>
+                                    {friend?.profession ?? "No Profession"}
+                                </span>
+                                </div>
+                            </Link>
+
+                            <div className='flex gap-1'>
+                                <button
+                                className='bg-customOrange text-sm text-white p-1 rounded hover:bg-white hover:text-customOrange'
+                                onClick={() => {}}
+                                >
+                                <BsPersonFillAdd size={20} className='hover:bg-white' />
+                                </button>
+                            </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </>                   
+  );
+}
+
+export default CreatePost

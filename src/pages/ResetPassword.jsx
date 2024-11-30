@@ -15,7 +15,6 @@ const ResetPassword = () => {
     mode: "onChange",
   });
 
-  const onSubmit = async (data) => {};
 
   return (
     <div className='w-full h-[100vh] bg-bgColor flex items-center justify-center p-6'>

@@ -1,30 +1,35 @@
 import React, { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
-import axios from 'axios';
+import api from '../api';
+import { jwtDecode } from "jwt-decode";
 
 const Notification = ({ onClose }) => {
   const { theme } = useSelector((state) => state.theme);
   const [notifications, setNotifications] = useState([]);
-  const [selectedNotification, setSelectedNotification] = useState(null); // State for selected notification
+  const [selectedNotification, setSelectedNotification] = useState(null);
 
-  const userId = 'e01278a2-c621-49a7-a9a8-993869dae05d'; // Example user ID
+  const token = localStorage.getItem('token');
+  let userId = null;
+  if (token) {
+    const decodedToken = jwtDecode(token);
+    userId = decodedToken.sub;
+  } else {
+    console.log('No token found!');
+  }
 
-  // Fetch NotificationIds based on the userId
   useEffect(() => {
     const fetchNotificationIds = async () => {
       try {
-        const notificationIdsResponse = await axios.get(`https://localhost:7200/api/Notification/user/${userId}`);
-        const notificationsData = notificationIdsResponse.data; 
-        // const notificationIds = notificationIdsResponse.data; // Assuming this returns an array of NotificationIds
-        // // Now fetch details for each notification ID
-        // const notificationsData = await Promise.all(
-        //   notificationIds.map(async (notificationId) => {
-        //     const notificationResponse = await axios.get(`https://localhost:7200/api/Notification/${notificationId}`);
-        //     return notificationResponse.data;
-        //   })
-        // );
+        const notificationIdsResponse = await api.get(`/api/Notification/user`,
+          {
+          headers: {
+              Authorization: `Bearer ${token}`,
+          }
+          }
+        );
 
-        setNotifications(notificationsData);
+        setNotifications(notificationIdsResponse.data);
+        console.log('Notifications:', notifications);
       } catch (error) {
         console.error('Error fetching notifications:', error);
       }
@@ -32,13 +37,42 @@ const Notification = ({ onClose }) => {
 
     fetchNotificationIds();
   }, []);
-
-  // Handle notification click to view more details
-  const handleNotificationClick = (notification) => {
-    setSelectedNotification(notification); // Set the selected notification
+  
+  // Handle notification click (mark as read)
+   const handleNotificationClick = async (notificationID) => {
+    try {
+      const notificationResponse = await api.put(`/api/Notification/markAsRead/${notificationID}`,
+        { isRead: true },
+        {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        }
+        }
+      );
+      
+      
+    } catch (error) {
+      console.error('Error updating notification:', error);
+    }
   };
 
-  // If a notification is selected, display its details
+  const handleReadAll  = async () => {
+    try {
+      const notificationResponse = await api.put(`/api/Notification/markAllAsRead`,
+        { isRead: true },
+        {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        }
+        }
+      );
+    
+    } catch (error) {
+      console.error('Error updating notification:', error);
+    }
+  };
+
+
   if (selectedNotification) {
     return (
       <div className="notification-detail">
@@ -50,28 +84,37 @@ const Notification = ({ onClose }) => {
     );
   }
 
+
   return (
     <div className='fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50'>
-      {/* Close Button */}
       <button className='absolute top-5 right-5 text-lg' onClick={onClose}>
-        &times; {/* Close Icon */}
+        &times; 
       </button>
-      <div className={`${theme === 'light' ? 'bg-white text-black border-black' : 'bg-black text-white border'} rounded-lg p-4 w-3/4 h-3/4 md:w-1/2 max-h-screen overflow-y-auto`}>
-        {/* Title */}
-        <h2 className='text-xl font-semibold mb-4'>Notifications</h2>
+      <div className={`${theme === 'light' ? 'bg-white text-black border-black' : 'bg-black text-white border'}  rounded-lg p-0 w-3/4 h-3/4 md:w-1/2 max-h-screen overflow-y-auto`}>
+        <h2 className='text-xl font-semibold mb-4 p-4'>
+          Notifications</h2>
+        <div className='flex justify-end gap-2 mt-4 pr-4'>
+        <button
+          className="p-2 bg-customOrange text-white rounded hover:bg-orange-900"
+          onClick={()=> handleReadAll()}>
+          Read All
+        </button>
+        </div>
 
-        {/* Display notifications */}
+      
         <div>
           {notifications.length > 0 ? (
             notifications.map((notification) => (
               <div
                 key={notification.notificationID}
-                className={`${theme === 'light' ? 'text-black hover:bg-gray-300' : 'text-white hover:bg-gray-700'} mb-2 p-3 rounded-xl cursor-pointer`}
-                onClick={() => handleNotificationClick(notification)}
+                className={`${theme === 'light' ? 'text-black hover:bg-gray-300' : 'text-white hover:bg-gray-700'} flex mb-0 p-3 cursor-pointer border-b border-gray-700`}
+                onClick={() => handleNotificationClick(notification.notificationID)}
               >
-                <h3 className='text-lg font-semibold'>{notification.message}</h3>
-                <p>{notification.message}</p>
-                <p className='text-sm text-gray-500'>{notification.date}</p>
+                <h3 className='text-lg font-semibold'>{notification.message}   </h3>
+                {notification.isRead ? null : (
+                    <p className="text-customOrange ">New</p> 
+                  )}
+                  {/* <p className='block text-sm text-gray-500'>post title</p> */}
               </div>
             ))
           ) : (

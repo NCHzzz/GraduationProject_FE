@@ -1,21 +1,83 @@
-import { Home, LogOut, MessageCircle, PlusSquare, Search, TrendingUp } from 'lucide-react';
-import React, { useState } from 'react';
-import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
-import CreatePost from './CreatePost'; 
+import { Home, LogOut, PlusSquare, Search } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Avatar, AvatarFallback } from './ui/avatar';
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from 'react-router-dom'; 
 import { Logout } from "../redux/userSlice";
 import { Bell } from 'lucide-react';
+import { logo_black, logo_white } from '../assets';
 import { BsMoon, BsSunFill } from "react-icons/bs";
 import { SetTheme } from "../redux/theme";
-import { logo_black, logo_white } from '../assets';
+import { jwtDecode } from "jwt-decode";
+import api from '../api';
+import { scrollToTop } from "./Feed";
+import signalRConnection from "../SignalRService";
 
-const Small_LeftSideBar = ({ user }) => {
-    const [open, setOpen] = useState(false);
-    const { user: data, edit } = useSelector((state) => state.user);
+const Small_LeftSideBar = ({ feedRef }) => {
     const dispatch = useDispatch();
     const navigate = useNavigate();
     const { theme } = useSelector((state) => state.theme);
+    const [unreadCount, setUnreadCount] = useState(0);
+
+    const handleHomeClick = () => {
+        scrollToTop(feedRef);
+        navigate("/home");
+    };
+
+    const reloadPage = () => {
+        window.location.reload(); 
+    };
+
+    const token = localStorage.getItem('token');
+    const [user, setUser] = useState(null);
+    let userId = null;
+    if (token) {
+        const decodedToken = jwtDecode(token);
+        userId = decodedToken.sub;
+    } else {
+        console.log('No token found!');
+    }
+
+    useEffect(() => {
+        const fetchData = async () => {
+            try {
+                const userResponse = await api.get(`/api/User/${userId}`,
+                {
+                    headers: {
+                    Authorization: `Bearer ${token}`, 
+                    },
+                }
+                );
+                const unreadCountResponse = await api.get(`/api/Notification/unreadCount`,
+                    {
+                        headers: {
+                        Authorization: `Bearer ${token}`, 
+                        },
+                    }
+                );
+                setUser(userResponse.data);
+                setUnreadCount(unreadCountResponse.data);
+                
+            } catch (error) {
+                console.error('Error fetching data:', error);
+            }
+        };
+        fetchData();
+
+    }, [userId]);
+
+    useEffect(() => {
+        signalRConnection.on("UpdateNotificationCount", (unreadCount) => {
+            if(userId) {
+                setUnreadCount(unreadCount);
+                console.log('Unread count:', unreadCount);
+            }
+        });
+
+        return () => {
+            signalRConnection.off("UpdateNotificationCount");
+        };
+    }, []);
 
     const handleTheme = () => {
         const themeValue = theme === "light" ? "dark" : "light";
@@ -24,40 +86,56 @@ const Small_LeftSideBar = ({ user }) => {
 
     const sidebarHandler = (itemText) => {
         if (itemText === "Create") {
-            setOpen(true);
-        } else if (itemText === "Profile") {
-            navigate(`/profile`);
-        } else if (itemText === "Logout") {
+            navigate("/create-post");
+        } 
+        else if (itemText === "Profile") {
+            navigate("/profile");
+        } 
+        else if (itemText === "Logout") {
             dispatch(Logout());
             navigate("/login");
-        } else if (itemText === "Home") {
-            navigate("/");
-        } else if (itemText === "Search") {
-            // Handle search
-        } else if (itemText === "Explore") {
-            // Handle explore
-        } else if (itemText === "Notifications") {
-            // Handle notifications
-        } else if (itemText === "Theme") {
+        } 
+        else if (itemText === "Home") {
+            handleHomeClick();
+        } 
+        else if (itemText === "Explore") {
+            navigate("/explore");
+        } 
+        else if (itemText === "Notifications") {
+            navigate("/notification");
+        } 
+        else if (itemText === "Theme") {
             handleTheme();
         } 
     };
 
     const sidebarItems = [
         { icon: <Home />, text: "Home" },
-        { icon: <Search />, text: "Search" },
-        { icon: <TrendingUp />, text: "Following" },
-        { icon: <MessageCircle />, text: "Messages" },
-        { icon: <Bell />, text: "Notifications" },
+        { icon: <Search />, text: "Explore" },
+        { icon: 
+                <div className="relative">
+                    <Bell />
+                    {unreadCount > 0 && (
+                        <span className="absolute bottom-4 left-4 inline-flex items-center justify-center text-xs font-bold leading-none w-4 h-4 text-red-100 bg-red-600 rounded-full">
+                            {unreadCount}
+                        </span>
+                    )}
+                </div>
+            , text: "Notifications" 
+        },
         { icon: <PlusSquare />, text: "Create" },
         {
             icon: (
                 <Avatar className='w-6 h-6'>
-                    <AvatarImage 
-                        alt={user?.firstName} 
-                        src={user?.profileUrl}
-                    />
-                    <AvatarFallback>{user?.firstName?.charAt(0)}{user?.lastName?.charAt(0)}</AvatarFallback>
+                    {user?.profilePictureURL ? (
+                        <img
+                        src={user.profilePictureURL}
+                        alt='profile'
+                        className="w-full h-auto"
+                        />
+                    ) : (
+                        <AvatarFallback>{user?.fullName?.charAt(0)}</AvatarFallback>
+                    )}
                 </Avatar>
             ),
             text: "Profile"
@@ -67,8 +145,11 @@ const Small_LeftSideBar = ({ user }) => {
     ];
 
     return (
-        <div className={`fixed top-0 z-10 left-0 px-2 border-r ${theme === "light" ? "border-gray-300" : "border-gray-700"} w-[12%] lg:w-[10%] h-screen bg-${theme === "light" ? "white" : "black"}`}>
-            <div className="flex items-center justify-center my-4 cursor-pointer" onClick={() => navigate("/")}>
+        <div className={`fixed w-[12%] top-0 z-10 left-0 px-2 border-r 
+                        ${theme === "light" ? "border-white" : "border-black"}
+                        w-[12%] lg:w-[10%] h-screen`}
+                        onClick={reloadPage}>
+            <div className="flex items-center justify-center my-4 cursor-pointer" onClick={() => navigate("/home")}>
                 <img src={theme === "light" ? logo_white : logo_black} alt="Logo" className="h-10 w-auto" />
             </div>
 
@@ -76,7 +157,10 @@ const Small_LeftSideBar = ({ user }) => {
                 {sidebarItems.map((item, index) => (
                     <div
                         key={index}
-                        className='flex items-center justify-center gap-1 hover:bg-gray-500 cursor-pointer rounded-lg p-3 my-3 w-full text-center'
+                        className={`${theme === "light" 
+                            ? "bg-white text-black hover:bg-gray-300 " 
+                            : "bg-black text-white hover:bg-gray-600 "} 
+                            flex items-center justify-center gap-1 cursor-pointer rounded-xl p-3 my-3 w-[90%] text-center`}
                         onClick={() => sidebarHandler(item.text)}
                     >
                         <div className='flex justify-center items-center w-full'>
@@ -85,7 +169,7 @@ const Small_LeftSideBar = ({ user }) => {
                     </div>
                 ))}
             </div>
-            {open && <CreatePost open={open} setOpen={setOpen} />}
+            
         </div>
     );
 };

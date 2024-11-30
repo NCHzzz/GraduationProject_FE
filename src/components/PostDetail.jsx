@@ -6,14 +6,31 @@ import Loading from './Loading';
 import { Link } from 'react-router-dom';
 import { postComments } from "../assets/data";
 import { useSelector } from 'react-redux';
+import api from '../api';
 
 const PostDetail = ({ post, onClose, user }) => {
   const [comments, setComments] = useState([]);
   const [loading, setLoading] = useState(false);
   const [showComments, setShowComments] = useState(0);
   const { theme } = useSelector((state) => state.theme);
-
-  const [showAll, setShowAll] = useState(0);
+  const [postDetail, setPostDetail] = useState('');
+  
+  const token = localStorage.getItem('token');
+  useEffect(() => {
+    api.get(`/api/Post/${post.postID}`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`, 
+        },
+    }
+    )
+      .then(response => {
+        setPostDetail(response.data);
+      })
+      .catch(error => {
+        console.error(error);
+      });
+  }, []);
 
   const getComments = async () => {
     setLoading(true);
@@ -35,7 +52,7 @@ const PostDetail = ({ post, onClose, user }) => {
   }, [post]);
 
   const handleLike = async () => {
-
+    
   };
 
   const handleDelete = async () => {
@@ -43,7 +60,7 @@ const PostDetail = ({ post, onClose, user }) => {
   };
 
   return (
-    <div className='fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50 '>
+    <div className='fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50'>
       <div className={`${theme === "light" ? "bg-white text-black border-black" : "bg-black text-white border"} rounded-lg p-4 w-3/4 md:w-1/2 max-h-screen overflow-y-auto`}>
         <button className='absolute top-5 right-5 text-lg' onClick={onClose}>
           &times;
@@ -69,14 +86,22 @@ const PostDetail = ({ post, onClose, user }) => {
 
             <div className='mb-4'>
             <h1 className={`${theme === "light" ? " text-black" : " text-white "} text-xl font-bold mb-2 `}>{post?.title}</h1>
-              <p className={`${theme === "light" ? " text-black" : " text-white "} mb-2 `}>{post?.shortDescription}</p>
-              {post?.image && (
-                <img src={post?.imageUrl} alt='post' className='w-full mt-2 rounded-lg' />
-              )}
+            <p className={`${theme === "light" ? " text-black" : " text-white "} mb-2 `}>{post?.shortDescription}</p>
+            <p className={`${theme === "light" ? " text-black" : " text-white "} mb-2 `}>#{post?.hashtags}</p>
+            {/* Display the image */}
+            {post?.imageUrl ? (
+              <img
+                src={post.imageUrl}
+                alt={post?.title ?? "Post Image"}
+                className="w-full h-auto rounded-lg mb-4"
+              />
+            ) : (
+              <p className="text-gray-500 italic">{null}</p>
+            )}
             </div>
             
             <h1 className={`${theme === "light" ? " text-black" : " text-white "} text-xl font-bold mb-2 `}>Location</h1>
-            <div className=''>
+            {/* <div className=''>
               <a
                 href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent("600 Dien Bien Phu, 22 Ward, Binh Thanh district, Ho Chi Minh city")}`}
                 target="_blank" 
@@ -85,7 +110,8 @@ const PostDetail = ({ post, onClose, user }) => {
               >
                 {post?.location}
               </a>
-            </div>
+            </div> */}
+            <p className={`${theme === "light" ? " text-black" : " text-white "} mb-2 `}>{postDetail?.location}</p>
               
             <div className='mt-4 flex justify-items-start items-center px-3 py-1 text-ascent-2 text-base border-t border-[#66666645]'>
               <p className='flex mr-5 gap-1 items-center text-base cursor-pointer' onClick={handleLike}>

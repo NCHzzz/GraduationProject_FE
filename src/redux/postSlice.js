@@ -25,14 +25,18 @@ import { createSlice } from '@reduxjs/toolkit';
 const postsSlice = createSlice({
   name: 'posts',
   initialState: {
+    isActive: true,
     posts: [],
   },
   reducers: {
     setPosts: (state, action) => {
       state.posts = action.payload;
     },
+    getIsActive:(state,action)=>{
+      state.isActive = action.payload;
+  }
   },
 });
 
-export const { setPosts } = postsSlice.actions;
+export const { setPosts, getIsActive } = postsSlice.actions;
 export default postsSlice.reducer;
