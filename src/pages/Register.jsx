@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { useNavigate } from 'react-router-dom';
 import api from '../api';
 import { CustomButton, Loading } from "../components";
-import { logo_without_background } from "../assets";
+import { text_logo_orange } from "../assets";
 
 const Register = () => {
   const [email, setEmail] = useState('');
@@ -53,7 +53,7 @@ const Register = () => {
       <div className='w-full md:w-[40%] h-fit lg:h-full 2xl:h-5/6 py-8 lg:py-0 flex bg-primary rounded-xl overflow-hidden shadow-xl border border-black'>
         <div className='w-full h-full p-5 2xl:px-15 flex flex-col justify-center '>
           <div className='w-full flex gap-2 items-center mb-6'>
-            <img src={logo_without_background} alt='Logo without background' />
+            <img src={text_logo_orange} alt='Logo without background' />
           </div>
 
           <form className='py-1 flex flex-col' onSubmit={handleSubmit}>

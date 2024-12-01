@@ -123,6 +123,9 @@ const Explore = ({ searchInput }) => {
         return <PostDetail post={selectedPost} onClose={handleClosePostDetail} user={user} />;
     }
 
+    if (!token) {
+        return null;
+    }
 
     return (
     <>

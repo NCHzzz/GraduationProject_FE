@@ -86,6 +86,10 @@ const OtherUserProfile = () => {
     return <div>Loading...</div>;
   }
 
+  if (!token) {
+    return null;
+}
+
   return (
     <div className={`flex min-h-screen ${theme === "light" ? "bg-white text-black" : "bg-black text-white"}`}>
       {/* LEFT */}

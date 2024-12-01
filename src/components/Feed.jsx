@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, Suspense } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import PostCard from "./PostCard";
+// import PostCard from "./PostCard";
 import PostDetail from "./PostDetail";
 import Loading from "./Loading";
 import { getIsActive } from "../redux/postSlice";
@@ -14,6 +14,7 @@ export const scrollToTop = (ref) => {
         ref.current.scrollTo({ top: 0, behavior: "smooth" });
     }
 };
+const PostCard = React.lazy(() => import('./PostCard')); // Lazy load PostCard
 
 const Feed = ({ feedRef }) => {
     // const { user } = useSelector((state) => state.user);
@@ -23,6 +24,7 @@ const Feed = ({ feedRef }) => {
     const [selectedPost, setSelectedPost] = useState(null);
     // const token = localStorage.getItem('token');
     const [posts, setPosts] = useState([]);
+    //   const posts = useSelector((state) => state.posts);
     const [followingPosts, setFollowingPosts] = useState([]);
 
     const token = localStorage.getItem('token');
@@ -90,6 +92,10 @@ const Feed = ({ feedRef }) => {
     }
 
     const postsToDisplay = isActive ? posts : followingPosts;
+
+    if (!token) {
+        return null;
+    }
   
   return (
     <div ref={feedRef} className={`flex h-screen border-l border-r border-l-gray-700 border-r-gray-700 flex-col gap-0 overflow-y-auto`}>
@@ -158,6 +164,19 @@ const Feed = ({ feedRef }) => {
             {loading ? (
                 <Loading />
             ) : postsToDisplay?.length > 0 ? (
+            <Suspense fallback={<Loading />}>
+                {postsToDisplay.map((post) => (
+                <PostCard key={post?.postID} post={post} user={user}/>
+                ))}
+            </Suspense>
+            ) : (
+                <div className='flex w-full h-full items-center justify-center'>
+                    <p className='text-lg text-ascent-2'>No Post Available</p>
+                </div>
+            )}
+            {/* {loading ? (
+                <Loading />
+            ) : postsToDisplay?.length > 0 ? (
                 postsToDisplay.map((post) => (
                     <PostCard
                         key={post?.postID}
@@ -172,7 +191,7 @@ const Feed = ({ feedRef }) => {
                 <div className='flex w-full h-full items-center justify-center'>
                     <p className='text-lg text-ascent-2'>No Post Available</p>
                 </div>
-            )}
+            )} */}
 
             {selectedPost && (
                 <PostDetail post={selectedPost} onClose={handleClosePostDetail} user={user} />

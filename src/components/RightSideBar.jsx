@@ -13,7 +13,8 @@ const RightSidebar = ({ otherUsers }) => {
     const [suggestedFriends, setSuggestedFriends] = useState(suggest);
     const [isSearchVisible, setIsSearchVisible] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
-
+    const token = localStorage.getItem('token');
+    
     const handleSearchClick = () => {
         setIsSearchVisible(true);
         
@@ -26,6 +27,10 @@ const RightSidebar = ({ otherUsers }) => {
     const handleSearch = (event) => {
       setSearchQuery(event.target.value);
     };
+
+    if (!token) {
+      return null;
+  }
 
   return (
     <div className={`w-[90%] px-0 lg:px-2 mt-3 bg-bgColor mb-2 ${theme === "light" ? "bg-white text-black" : "bg-black text-white"}  lg:rounded-lg h-screen overflow-hidden hidden lg:block`}>

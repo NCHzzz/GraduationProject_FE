@@ -1,4 +1,4 @@
-import React from "react";
+import React, {useEffect} from "react";
 import { useSelector } from "react-redux";
 import {
   EditProfile,
@@ -10,16 +10,23 @@ import {
 import { useNavigate } from 'react-router-dom';
 
 
+
 const Home = (token) => {
   const navigate = useNavigate();
   const { edit } = useSelector((state) => state.user);
   const { theme } = useSelector((state)=> state.theme);
   const feedRef = React.useRef(null);
+  const { otherUsers } = useSelector(store => store.user);
+
+  useEffect(() => {
+    console.log('Home component loaded');
+  }, []);
+
 
   if (!token) {
     navigate('/login');
+    return null;
   }
-  const { otherUsers } = useSelector(store => store.user);
 
   return (
     <>
@@ -46,6 +53,7 @@ const Home = (token) => {
         </div>
       </div>
       {edit && <EditProfile />}
+    
     </>
   );
 };

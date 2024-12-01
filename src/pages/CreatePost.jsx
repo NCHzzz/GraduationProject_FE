@@ -124,6 +124,10 @@ const CreatePost = () => {
         setImages(""); 
     };
     
+    if (!token) {
+        return null;
+    }
+    
   return (
     <>
         {popupVisible && (

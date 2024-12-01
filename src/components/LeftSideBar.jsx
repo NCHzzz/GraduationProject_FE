@@ -1,11 +1,11 @@
 import { Home, LogOut, PlusSquare, Search } from 'lucide-react';
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Avatar, AvatarFallback } from './ui/avatar';
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from 'react-router-dom'; 
 import { Logout } from "../redux/userSlice";
 import { Bell } from 'lucide-react';
-import { logo_black, logo_white } from '../assets';
+import { text_logo_black, text_logo_white } from '../assets';
 import { BsMoon, BsSunFill } from "react-icons/bs";
 import { SetTheme } from "../redux/theme";
 import { jwtDecode } from "jwt-decode";
@@ -38,17 +38,17 @@ const LeftSideBar = ({ feedRef }) => {
         console.log('No token found!');
     }
 
-    useEffect(() => {
-        signalRConnection.on("UpdateNotificationCount", (unreadCount) => {
-            if(userId){
-                setUnreadCount(unreadCount);
-            }
-        });
+    // useEffect(() => {
+    //     signalRConnection.on("UpdateNotificationCount", (unreadCount) => {
+    //         if(userId){
+    //             setUnreadCount(unreadCount);
+    //         }
+    //     });
 
-        return () => {
-            signalRConnection.off("UpdateNotificationCount");
-        };
-    }, []);
+    //     return () => {
+    //         signalRConnection.off("UpdateNotificationCount");
+    //     };
+    // }, []);
 
     useEffect(() => {
         // const fetchData = async () => {
@@ -155,10 +155,14 @@ const LeftSideBar = ({ feedRef }) => {
         { icon: <LogOut />, text: "Logout" },
     ];
 
+    if (!token) {
+        return null;
+    }
+
     return (
         <div className='fixed sm:w-[17%] h-screen'>
             <div className="flex items-center justify-center mt-3 cursor-pointer" onClick={reloadPage}>
-                <img src={theme === "light" ? logo_white : logo_black} alt="Logo" className="h-[25%] w-[25%]" />
+                <img src={theme === "light" ? text_logo_black : text_logo_white} alt="Logo" className="h-[80%] w-[80%]" />
             </div>
             <div className='flex flex-col '>
                 <div>

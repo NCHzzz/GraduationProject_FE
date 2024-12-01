@@ -10,6 +10,15 @@ import { BsPersonFillAdd } from "react-icons/bs";
 import { suggest } from "../assets/data";
 import signalRConnection from "../SignalRService";
 import PostDetail from "../components/PostDetail";
+import { set } from "react-hook-form";
+
+const NotificationPopup = ({ message }) => {
+  return (
+      <div className="fixed top-4 right-4 bg-green-500 font-semibold text-white px-4 py-2 rounded shadow-lg z-50">
+          <p>{message}</p>
+      </div>
+  );
+};
 
 const Notification = () => {
   const [suggestedFriends, setSuggestedFriends] = useState(suggest);
@@ -19,6 +28,8 @@ const Notification = () => {
   const [notificationPost, setNotificationPost] = useState('');
   const [user, setUser] = useState('');
   const [selectedPost, setSelectedPost] = useState('');
+  const [popupVisible, setPopupVisible] = useState(false); 
+
   const token = localStorage.getItem("token");
   let userId = null;
   if (token) {
@@ -28,12 +39,12 @@ const Notification = () => {
     console.log("No token found!");
   }
 
-  useEffect(() => {
-    signalRConnection.on("ReceiveNotification", (message) => {
-      setNotifications(prevNotifications => [...prevNotifications, message]);
-      console.log("Notification received:", message);
-  });
-}, []);
+//   useEffect(() => {
+//     signalRConnection.on("ReceiveNotification", (message) => {
+//       setNotifications(prevNotifications => [...prevNotifications, message]);
+//       console.log("Notification received:", message);
+//   });
+// }, []);
 
   // Fetch existing notifications
   useEffect(() => {
@@ -99,6 +110,7 @@ const Notification = () => {
           },
         }
       );
+      setPopupVisible(true);
     } catch (error) {
       console.error("Error updating notifications:", error);
     }
@@ -114,6 +126,10 @@ const Notification = () => {
     );
   }
 
+  if (!token) {
+    return null;
+}
+
   return (
     <>
       <div
@@ -121,6 +137,10 @@ const Notification = () => {
           theme === "light" ? "bg-white text-black" : "bg-black text-white"
         } lg:rounded-lg h-screen overflow-hidden `}
       >
+        {popupVisible && (
+                <NotificationPopup
+                    message='You have read all notifications'
+                    onClose={() => setPopupVisible(false)}/>)}
         <div className="w-full flex h-full">
           {/* LEFT */}
           <div className="hidden xs:w-[20%] px-4 h-full md:flex sm:hidden flex-col gap-6 overflow-x-auto items-center">

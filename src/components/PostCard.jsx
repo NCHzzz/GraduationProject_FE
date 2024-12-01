@@ -23,6 +23,7 @@ const NotificationPopup = ({ message }) => {
       </div>
   );
 };
+
 const PostCard = ({ post, user }) => { 
   const [showComments, setShowComments] = useState(0);
   const [loading, setLoading] = useState(false);
@@ -37,7 +38,7 @@ const PostCard = ({ post, user }) => {
   const [isLoaded, setIsLoaded] = useState(false);
   const navigate = useNavigate();
   const [isFollowing, setIsFollowing] = useState(false); 
-  const { ref, inView } = useInView({triggerOnce: true, threshold: 0.8, });
+  const { ref, inView } = useInView({triggerOnce: true, threshold: 0.1, });
   const [notifications, setNotifications] = useState([]);
   const [notificationMessage, setNotificationMessage] = useState('');
   const [popupVisible, setPopupVisible] = useState(false); 
@@ -77,14 +78,14 @@ const PostCard = ({ post, user }) => {
   }, [post.postID]);
 
   useEffect(() => {
-      signalRConnection.on("ReceiveNotification", (message) => {
-          if(userId === post.userID) {
-          // setNotifications(prevNotifications => [...prevNotifications, message]);
-          setNotificationMessage(message);
-          setPopupVisible(true);
-          setTimeout(() => setPopupVisible(false), 3000);
-          }
-      });
+      // signalRConnection.on("ReceiveNotification", (message) => {
+      //     if(userId === post.userID) {
+      //     // setNotifications(prevNotifications => [...prevNotifications, message]);
+      //     setNotificationMessage(message);
+      //     setPopupVisible(true);
+      //     setTimeout(() => setPopupVisible(false), 3000);
+      //     }
+      // });
 
       signalRConnection.on("UpdateReactionCounts", (postId, totalLikes, totalDislikes) => {
         if(postId === post.postID) {
@@ -331,33 +332,36 @@ const PostCard = ({ post, user }) => {
                 headers: { Authorization: `Bearer ${token}` },
             }
         );
-
+        setIsFollowing(true);
+        setNotificationMessage(`You followed @${postUserProfile.userName}!`);
+        setPopupVisible(true);
+        setTimeout(() => setPopupVisible(false), 3000);
         // Check the response
-        if (response.data.flag && response.data.data === true) {
-            setIsFollowing(true); // Update the follow state
-            console.log(response.data.message); // Log success message
+        // if (response.data.flag && response.data.data === true) {
+        //     setIsFollowing(true); // Update the follow state
+        //     console.log(response.data.message); // Log success message
 
-            // Prepare and send notification
-            const notificationMessage = `@${userProfile.userName} followed you!`;
-            const notificationResponse = await api.post(
-                `/api/Notification`,
-                {
-                    receiveUserID: postUserProfileId,
-                    message: notificationMessage,
-                },
-                {
-                    headers: { Authorization: `Bearer ${token}` },
-                }
-            );
+        //     // Prepare and send notification
+        //     const notificationMessage = `@${userProfile.userName} followed you!`;
+        //     const notificationResponse = await api.post(
+        //         `/api/Notification`,
+        //         {
+        //             receiveUserID: postUserProfileId,
+        //             message: notificationMessage,
+        //         },
+        //         {
+        //             headers: { Authorization: `Bearer ${token}` },
+        //         }
+        //     );
 
-            if (notificationResponse.data.flag) {
-                console.log("Notification sent successfully:", notificationResponse.data.message);
-            } else {
-                console.error("Notification sending failed:", notificationResponse.data.message);
-            }
-        } else {
-            throw new Error("Failed to follow the user. Please try again.");
-        }
+        //     if (notificationResponse.data.flag) {
+        //         console.log("Notification sent successfully:", notificationResponse.data.message);
+        //     } else {
+        //         console.error("Notification sending failed:", notificationResponse.data.message);
+        //     }
+        // } else {
+        //     throw new Error("Failed to follow the user. Please try again.");
+        // }
     } catch (error) {
         console.error("Error in handleFollow:", error);
     }
@@ -368,9 +372,13 @@ const PostCard = ({ post, user }) => {
       const response = await api.post(`/api/Follow/followOrUnfollow?isFollow=false`, 
         { followUserId: postUserProfileId },
         { headers: { Authorization: `Bearer ${token}`,}});
-      if (response.status === 200) {
         setIsFollowing(false);
-      }
+        setNotificationMessage(`You unfollowed @${postUserProfile.userName}!`);
+        setPopupVisible(true);
+        setTimeout(() => setPopupVisible(false), 3000);
+      // if (response.status === 200) {
+      //   setIsFollowing(false);
+      // }
     } catch (error) {console.error(error);}
   };
 
@@ -392,6 +400,7 @@ if (now.diff(postTime, 'minutes') < 60) {
 
   return (
     <div ref={ref}>
+    {/* <div> */}
       {isLoaded ? (
             <div className={`${theme === "light" 
                             ? "bg-white text-black hover:bg-gray-300 " 

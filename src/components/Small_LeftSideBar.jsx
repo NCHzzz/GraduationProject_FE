@@ -5,7 +5,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from 'react-router-dom'; 
 import { Logout } from "../redux/userSlice";
 import { Bell } from 'lucide-react';
-import { logo_black, logo_white } from '../assets';
+import { text_logo_black, text_logo_white } from '../assets';
 import { BsMoon, BsSunFill } from "react-icons/bs";
 import { SetTheme } from "../redux/theme";
 import { jwtDecode } from "jwt-decode";
@@ -66,18 +66,18 @@ const Small_LeftSideBar = ({ feedRef }) => {
 
     }, [userId]);
 
-    useEffect(() => {
-        signalRConnection.on("UpdateNotificationCount", (unreadCount) => {
-            if(userId) {
-                setUnreadCount(unreadCount);
-                console.log('Unread count:', unreadCount);
-            }
-        });
+    // useEffect(() => {
+    //     signalRConnection.on("UpdateNotificationCount", (unreadCount) => {
+    //         if(userId) {
+    //             setUnreadCount(unreadCount);
+    //             console.log('Unread count:', unreadCount);
+    //         }
+    //     });
 
-        return () => {
-            signalRConnection.off("UpdateNotificationCount");
-        };
-    }, []);
+    //     return () => {
+    //         signalRConnection.off("UpdateNotificationCount");
+    //     };
+    // }, []);
 
     const handleTheme = () => {
         const themeValue = theme === "light" ? "dark" : "light";
@@ -143,6 +143,9 @@ const Small_LeftSideBar = ({ feedRef }) => {
         { icon: theme === "light" ? <BsMoon /> : <BsSunFill />, text: "Theme" },
         { icon: <LogOut />, text: "Logout" },
     ];
+    if (!token) {
+        return null;
+    }
 
     return (
         <div className={`fixed w-[12%] top-0 z-10 left-0 px-2 border-r 
@@ -150,7 +153,7 @@ const Small_LeftSideBar = ({ feedRef }) => {
                         w-[12%] lg:w-[10%] h-screen`}
                         onClick={reloadPage}>
             <div className="flex items-center justify-center my-4 cursor-pointer" onClick={() => navigate("/home")}>
-                <img src={theme === "light" ? logo_white : logo_black} alt="Logo" className="h-10 w-auto" />
+                <img src={theme === "light" ? text_logo_black : text_logo_white} alt="Logo" className="h-[80%] w-[80%]" />
             </div>
 
             <div className='flex flex-col items-center'>

@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { CustomButton, Loading } from "../components";
-import { logo_without_background } from "../assets";
+import { text_logo_orange } from "../assets";
 import { useNavigate  } from 'react-router-dom'; // For navigation after login
 import api from "../api";
 
@@ -44,7 +44,7 @@ const Login = () => {
         <div className='w-full h-full p-5 2xl:px-15 flex flex-col justify-center '>
           <div className='w-full flex gap-2 items-center mb-6'>
             <img
-              src={logo_without_background}
+              src={text_logo_orange}
               alt='Logo without background'
               className=''
             />

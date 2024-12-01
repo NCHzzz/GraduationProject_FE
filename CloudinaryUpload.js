@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import axios from "axios";
+import api from "./src/api";
 
 const CloudinaryUpload = () => {
   const [selectedFile, setSelectedFile] = useState(null);
