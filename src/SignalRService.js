@@ -2,7 +2,7 @@
 import * as signalR from "@microsoft/signalr";
 
 const connection = new signalR.HubConnectionBuilder()
-    .withUrl("https://localhost:5269/notificationHub", {
+    .withUrl("http://20.6.73.133:5269/notificationHub", {
         accessTokenFactory: () => localStorage.getItem('token'),
         skipNegotiation: false,
         transport: signalR.HttpTransportType.WebSockets,
