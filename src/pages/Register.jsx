@@ -5,6 +5,14 @@ import api from '../api';
 import { CustomButton, Loading } from "../components";
 import { text_logo_orange } from "../assets";
 
+const NotificationPopup = ({ message }) => {
+  return (
+      <div className="fixed top-4 right-4 bg-green-500 font-semibold text-white px-4 py-2 rounded shadow-lg z-50">
+          <p>{message}</p>
+      </div>
+  );
+};
+
 const Register = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -13,6 +21,7 @@ const Register = () => {
   const [errorMessage, setErrorMessage] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const [popupVisible, setPopupVisible] = useState(false); 
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -34,14 +43,20 @@ const Register = () => {
         password
       });
 
-      console.log(response); // Log the full response for debugging
+      console.log(response);
 
       if (response.data.token) {
         localStorage.setItem('token', response.data.token);
-        navigate('/login');
+        setPopupVisible(true);
+        setTimeout(() => {
+          setPopupVisible(false);
+        }, 3000);
+        // navigate('/login');
       }
+
+
     } catch (error) {
-      console.error(error); // Log the error for debugging
+      console.error(error); 
       setErrorMessage(error.response?.data || 'An error occurred during registration.');
     } finally {
       setLoading(false);
@@ -49,6 +64,14 @@ const Register = () => {
   };
 
   return (
+    <>
+
+    {popupVisible && (
+      <NotificationPopup
+          message="Create account successfully!"
+          onClose={() => setPopupVisible(false)}
+      />
+  )}
     <div className='bg-bgColor w-full h-[100vh] flex items-center justify-center p-6'>
       <div className='w-full md:w-[40%] h-fit lg:h-full 2xl:h-5/6 py-8 lg:py-0 flex bg-primary rounded-xl overflow-hidden shadow-xl border border-black'>
         <div className='w-full h-full p-5 2xl:px-15 flex flex-col justify-center '>
@@ -137,6 +160,8 @@ const Register = () => {
         </div>
       </div>
     </div>
+
+    </>
   );
 };
 

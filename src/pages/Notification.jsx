@@ -4,13 +4,8 @@ import api from "../api";
 import { jwtDecode } from "jwt-decode";
 import LeftSideBar from "../components/LeftSideBar";
 import Small_LeftSideBar from "../components/Small_LeftSideBar";
-import { Link } from "react-router-dom";
-import { NoProfile } from "../assets";
-import { BsPersonFillAdd } from "react-icons/bs";
-import { suggest } from "../assets/data";
-import signalRConnection from "../SignalRService";
+import RightSidebar from "../components/RightSideBar";  
 import PostDetail from "../components/PostDetail";
-import { set } from "react-hook-form";
 
 const NotificationPopup = ({ message }) => {
   return (
@@ -21,7 +16,7 @@ const NotificationPopup = ({ message }) => {
 };
 
 const Notification = () => {
-  const [suggestedFriends, setSuggestedFriends] = useState(suggest);
+  const { otherUsers } = useSelector(store => store.user);
   const { theme } = useSelector((state) => state.theme);
   const [notifications, setNotifications] = useState([]);
   const [selectedNotification, setSelectedNotification] = useState(null);
@@ -192,56 +187,8 @@ const Notification = () => {
           </div>
 
           {/* RIGHT */}
-          <div className="hidden w-[30%] h-full lg:flex flex-col overflow-y-auto">
-            <div
-              className={`w-[90%] px-0 lg:px-2 mt-3 bg-bgColor ${
-                theme === "light" ? "bg-white text-black" : "bg-black text-white"
-              } lg:rounded-lg h-screen overflow-hidden `}
-            >
-              <div className="p-4 rounded-2xl my-4 border border-gray-700">
-                <h1 className="font-bold text-lg">Who to follow</h1>
-                <div className="w-full flex flex-col gap-4 pt-4">
-                  {suggestedFriends?.map((friend) => (
-                    <div
-                      className="flex items-center justify-between"
-                      key={friend._id}
-                    >
-                      <Link
-                        to={"/profile/" + friend?._id}
-                        key={friend?._id}
-                        className="w-full flex gap-4 items-center cursor-pointer"
-                      >
-                        <img
-                          src={friend?.profileUrl ?? NoProfile}
-                          alt={friend?.firstName}
-                          className="w-10 h-10 object-cover rounded-full"
-                        />
-                        <div className="flex-1 ">
-                          <p className="text-base font-medium text-ascent-1">
-                            {friend?.firstName} {friend?.lastName}
-                          </p>
-                          <span className="text-sm text-ascent-2">
-                            {friend?.profession ?? "No Profession"}
-                          </span>
-                        </div>
-                      </Link>
-
-                      <div className="flex gap-1">
-                        <button
-                          className="bg-customOrange text-sm text-white p-1 rounded hover:bg-white hover:text-customOrange"
-                          onClick={() => {}}
-                        >
-                          <BsPersonFillAdd
-                            size={20}
-                            className="hover:bg-white"
-                          />
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
+          <div className='hidden w-[30%] h-full lg:flex flex-col overflow-y-auto'>
+            <RightSidebar otherUsers={otherUsers} />
           </div>
         </div>
       </div>

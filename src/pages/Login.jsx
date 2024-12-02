@@ -28,8 +28,10 @@ const Login = () => {
       if (response.data.token) {
         localStorage.setItem('token', response.data.token);
         navigate('/home'); 
-        console.log("Token after logging: ",response.data.token);
+        // console.log("Token after logging: ",response.data.token);
+    
       }
+      
       } catch (error) {
       console.error(error); 
       setErrorMessage(error.response?.data || 'An error occurred during login.');

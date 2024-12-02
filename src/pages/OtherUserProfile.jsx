@@ -1,62 +1,53 @@
 import React, { useState, useEffect } from 'react';
-import { Avatar, AvatarImage } from '../components/ui/avatar';
 import { Badge } from '../components/ui/badge';
 import { AtSign, Heart, MessageCircle } from 'lucide-react';
 import { useSelector } from 'react-redux';
 import LeftSideBar from '../components/LeftSideBar'; 
 import Small_LeftSideBar from '../components/Small_LeftSideBar';
-import axios from 'axios'; 
-import { NoProfile } from "../assets";
 import { useParams } from 'react-router-dom';
-import { jwtDecode } from "jwt-decode";
 import api from '../api';
+import { Avatar, AvatarFallback } from '../components/ui/avatar';
 
 const OtherUserProfile = () => {
   const [activeTab, setActiveTab] = useState('posts');
   const { theme } = useSelector((state) => state.theme);
-  const { user } = useSelector((state) => state.user);
-  const { userId } = useParams();
+  const  userId = useParams();
   console.log("userId: ", userId);
-  // const [profilePost, setProfilePost] = useState([]);
   const [profile, setProfile] = useState('');
   const [posts, setPosts] = useState([]);
   const [following, setFollowing] = useState('');
   const [follower, setFollower] = useState('');
 
   const token = localStorage.getItem('token');
-  console.log("token: ", token);
-  if (token) {
-    const decodedToken = jwtDecode(token);
-    // userId = decodedToken.sub;
-    console.log("userId: ", userId);
-  } else {
+  if (!token) {
     console.log('No token found!');
   }
+
   useEffect(() => {
     const fetchData = async () => {
         try {
-            const profileResponse = await api.get(`/api/User/${userId}`,
+            const profileResponse = await api.get(`/api/User/${userId.id}`,
               {
                 headers: {
                   Authorization: `Bearer ${token}`, 
                 },
             }
             );
-            const postResponse = await api.get(`/api/Post/user/${userId}`,
+            const postResponse = await api.get(`/api/Post/user/${userId.id}`,
               {
                 headers: {
                   Authorization: `Bearer ${token}`, 
                 },
             }
             );
-            const followingResponse = await api.get(`/api/Follow/followingCount?userId=${userId}`,
+            const followingResponse = await api.get(`/api/Follow/followingCount?userId=${userId.id}`,
               {
                 headers: {
                   Authorization: `Bearer ${token}`, 
                 },
               }
             );
-            const followerResponse = await api.get(`/api/Follow/followersCount?userId=${userId}`,
+            const followerResponse = await api.get(`/api/Follow/followersCount?userId=${userId.id}`,
               {
                 headers: {
                   Authorization: `Bearer ${token}`, 
@@ -68,8 +59,6 @@ const OtherUserProfile = () => {
             setPosts(postResponse.data);
             setFollowing(followingResponse.data);
             setFollower(followerResponse.data);
-
-            console.log("followingResponse: ", followingResponse.data);
  
         } catch (error) {
             console.error('Error fetching data:', error);
@@ -105,8 +94,17 @@ const OtherUserProfile = () => {
           <section >
             <div className='flex items-center justify-left w-full p-4'> 
               <Avatar className='h-32 w-32'>
-                <AvatarImage src={profile.profilePictureURL} alt="profilephoto" />
-              </Avatar>
+                      {profile?.profilePictureURL ? (
+                          <img
+                            src={profile?.profilePictureURL}
+                            alt={profile?.userName}
+                            className="h-32 w-32 object-cover"
+    
+                          />
+                      ) : (
+                          <AvatarFallback>{profile?.fullName?.charAt(0)}</AvatarFallback>
+                      )}
+                  </Avatar>
             </div>
           </section>
           <section>

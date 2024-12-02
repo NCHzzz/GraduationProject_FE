@@ -12,9 +12,6 @@ import { useInView } from "react-intersection-observer";
 import OtherUserProfile from "../pages/OtherUserProfile";
 import api from "../api";
 import signalRConnection from "../SignalRService";
-import signalRService from "../SignalRService";
-import connection from "../SignalRService";
-import { set } from "react-hook-form";
 
 const NotificationPopup = ({ message }) => {
   return (
@@ -36,10 +33,8 @@ const PostCard = ({ post, user }) => {
   const [userDislikeStatus, setUserDislikeStatus] = useState(false); 
   const [userSaveStatus, setUserSaveStatus] = useState(false); 
   const [isLoaded, setIsLoaded] = useState(false);
-  const navigate = useNavigate();
   const [isFollowing, setIsFollowing] = useState(false); 
   const { ref, inView } = useInView({triggerOnce: true, threshold: 0.1, });
-  const [notifications, setNotifications] = useState([]);
   const [notificationMessage, setNotificationMessage] = useState('');
   const [popupVisible, setPopupVisible] = useState(false); 
   const [totalLikes, setTotalLikes] = useState(post.totalLikes); 
@@ -49,7 +44,6 @@ const PostCard = ({ post, user }) => {
     totalLikes: post.totalLikes,
     totalDislikes: post.totalDislikes,
   });
-  const [followerCount, setFollowerCount] = useState(0);
   const token = localStorage.getItem('token');
   let userId = null;
   if (token) {
@@ -69,67 +63,12 @@ const PostCard = ({ post, user }) => {
   };
 
   useEffect(() => {
-    const savedStatus = getInteractionStatus(post.postID);
-    if (savedStatus) {
-      setUserLikeStatus(savedStatus.likeStatus);
-      setUserDislikeStatus(savedStatus.dislikeStatus);
-      setUserSaveStatus(savedStatus.saveStatus);
-    }
-  }, [post.postID]);
-
-  useEffect(() => {
-      // signalRConnection.on("ReceiveNotification", (message) => {
-      //     if(userId === post.userID) {
-      //     // setNotifications(prevNotifications => [...prevNotifications, message]);
-      //     setNotificationMessage(message);
-      //     setPopupVisible(true);
-      //     setTimeout(() => setPopupVisible(false), 3000);
-      //     }
-      // });
-
-      signalRConnection.on("UpdateReactionCounts", (postId, totalLikes, totalDislikes) => {
-        if(postId === post.postID) {
-          setReactionCounts({ totalLikes, totalDislikes });
-        }
-        // if (userId === post.userID && postId === post.postID) {
-        //   if (totalLikes > reactionCounts.totalLikes) {
-        //     setNotificationMessage(`Your post has been liked!`);
-        //     setPopupVisible(true);
-        //     setTimeout(() => setPopupVisible(false), 3000);
-        //   } else if (totalDislikes > reactionCounts.totalDislikes) {
-        //     setNotificationMessage(`Your post has been disliked!`);
-        //     setPopupVisible(true);
-        //     setTimeout(() => setPopupVisible(false), 3000);
-        //   }
-        // }
-      });
-
-      signalRConnection.on("UpdateSaveCounts", (postId, totalSaves) => {
-        if (postId === post.postID) {
-          setTotalSaved(totalSaves);
-        }
-        // if (postId === post.postID && userId === post.userID && totalSaves > totalSaved) {
-        //   setNotificationMessage("You post has been saved!");
-        //   setPopupVisible(true);
-        //   setTimeout(() => setPopupVisible(false), 3000);
-        // }
-      });
-
-      return () => {
-          signalRConnection.off("ReceiveNotification");
-          signalRConnection.off("UpdateReactionCounts");
-          signalRConnection.off("UpdateSaveCounts");
-      };
-  }, [post.postID, userId, reactionCounts.totalLikes, reactionCounts.totalDislikes, totalSaved]);
-
-  useEffect(() => {
     if (inView) {
       setIsLoaded(true);
     }
   }, [inView]);
 
   useEffect(() => {
-    // if (isLoaded) {
       api
         .get(`/api/User/${userId}`, {headers: {Authorization: `Bearer ${token}`,},})
         .then((response) => {setUserProfile(response.data);})
@@ -139,15 +78,10 @@ const PostCard = ({ post, user }) => {
         .then((response) => {setPostUserProfile(response.data);})
         .catch((error) => {console.error(error);});
       api
-        .get(`/api/Follow/followersCount?userId=${post.userID}`, {headers: {Authorization: `Bearer ${token}`,},})
-        .then((response) => {setFollowerCount(response.data);})
-        .catch((error) => {console.error(error);});
-      api
         .get(`/api/Post/save/count?postId=${post.postID}`, {headers: {Authorization: `Bearer ${token}`,},})
         .then((response) => {setTotalSaved(response.data);})
         .catch((error) => {console.error(error);});
-    // }
-  }, [isLoaded, userId, post.userID, token]);
+  }, [userId, post.userID, token]);
 
   useEffect(() => {
     if (userId && post.userID) {
@@ -175,12 +109,6 @@ const PostCard = ({ post, user }) => {
     setSelectedPost(post); 
   };
 
-  const handleNavigateProfile = () => {
-    if (postUserProfile.id) {
-      navigate(`/profile/${postUserProfile.id}`);
-    }
-  }
-
   const getComments = async () => {
     setLoading(true);
     setLoading(false);
@@ -189,6 +117,7 @@ const PostCard = ({ post, user }) => {
   const handleLike = async () => {
     const newLikeStatus = !userLikeStatus;
     const newTotalLikes = newLikeStatus ? totalLikes + 1 : totalLikes - 1;
+    
     // Update the like status
     setUserLikeStatus(newLikeStatus);
     setTotalLikes(newTotalLikes);
@@ -202,27 +131,19 @@ const PostCard = ({ post, user }) => {
       saveStatus: userSaveStatus,
     });
     try {
-      const likeResponse = await api.post(`/api/Post/react?postId=${post.postID}&isLike=true`, 
+      await api.post(`/api/Post/react?postId=${post.postID}&isLike=true`, 
         { userId: user.id },
         { headers: {Authorization: `Bearer ${token}`,}});
-
-    // // If the like was successful, send a notification
-    // if (likeResponse.status === 200 && newLikeStatus) {
-    //   const notificationMessage = `@${userProfile.userName} liked your post!`;
-    //   await api.post(
-    //     `/api/Notification`,
-    //     { postID: post.postID,
-    //       receiveUserID: post.userID,
-    //        message: notificationMessage,},
-    //     { headers: { Authorization: `Bearer ${token}`,},});
-
-      
-    // } else if (likeResponse.status !== 200) {
-    //   // Revert the like status if the like action failed
-    //   setUserLikeStatus(!newLikeStatus);
-    //   setTotalLikes(newTotalLikes - (newLikeStatus ? 1 : -1));
-    // }
-    } catch (error) {console.error(error);}
+    } catch (error) {
+      console.error(error);
+      // Revert the state on failure
+      setUserLikeStatus(!newLikeStatus);
+      setTotalLikes(totalLikes);
+      setReactionCounts((prevCounts) => ({
+        ...prevCounts,
+        totalLikes: totalLikes,
+      }));
+    }
   };
   
   const handleDislike = async () => {
@@ -240,33 +161,25 @@ const PostCard = ({ post, user }) => {
       dislikeStatus: newDislikeStatus,
       saveStatus: userSaveStatus,
     });
-
     try {
-      const dislikeResponse = await api.post(`/api/Post/react?postId=${post.postID}&isLike=false`, 
+      await api.post(`/api/Post/react?postId=${post.postID}&isLike=false`, 
         { userId: user.id },
         { headers: { Authorization: `Bearer ${token}`, }});
-      // If the dislike was successful, send a notification
-      // if (dislikeResponse.status === 200 && newDislikeStatus) {
-      //   const notificationMessage = `@${userProfile.userName} disliked your post!`;
-      //   await api.post(
-      //     `/api/Notification`,
-      //     { receiveUserID: post.userID, message: notificationMessage,},
-      //     { headers: { Authorization: `Bearer ${token}`,},});
-
-      //   setPopupVisible(true);
-      //   setTimeout(() => setPopupVisible(false), 3000); 
-      // } else if (dislikeResponse.status !== 200) {
-      //   // Revert the dislike status if the dislike action failed
-      //   setUserLikeStatus(!newDislikeStatus);
-      //   setTotalLikes(newTotalDislikes - (newDislikeStatus ? 1 : -1));
-      // }
-    } catch (error) { console.error(error);}
+    } catch (error) {
+      console.error(error);
+      // Revert the state on failure
+      setUserDislikeStatus(!newDislikeStatus);
+      setTotalDislikes(totalDislikes);
+      setReactionCounts((prevCounts) => ({
+        ...prevCounts,
+        totalDislikes: totalDislikes,
+      }));
+    }
   };
 
   const handleSavePost = async () => {
     const newSaveStatus = !userSaveStatus; 
     const newTotalSave = newSaveStatus ? totalSaved + 1 : totalSaved - 1;
-
     // Optimistically update the state
     setUserSaveStatus(newSaveStatus);
     setTotalSaved(newTotalSave);
@@ -288,7 +201,10 @@ const PostCard = ({ post, user }) => {
             );
             // Handle the response
             if (response.data.flag && response.data.data === true) {
-                console.log(response.data.message); // Log success message
+                console.log(response.data.message); 
+                setNotificationMessage(`You saved a from @${postUserProfile.userName}!`);
+                setPopupVisible(true);
+                setTimeout(() => setPopupVisible(false), 3000);
             } else {
                 throw new Error("Failed to save the post. Reverting changes.");
             }
@@ -303,7 +219,10 @@ const PostCard = ({ post, user }) => {
 
             // Handle the response
             if (response.data.flag && response.data.data === true) {
-                console.log(response.data.message); // Log success message
+                console.log(response.data.message);
+                setNotificationMessage(`You unsaved a from @${postUserProfile.userName}!`);
+                setPopupVisible(true);
+                setTimeout(() => setPopupVisible(false), 3000);
             } else {
                 throw new Error("Failed to unsave the post. Reverting changes.");
             }
@@ -316,6 +235,52 @@ const PostCard = ({ post, user }) => {
         setTotalSaved(totalSaved);
     }
 };
+
+useEffect(() => {
+  const savedStatus = getInteractionStatus(post.postID);
+  if (savedStatus) {
+    setUserLikeStatus(savedStatus.likeStatus);
+    setUserDislikeStatus(savedStatus.dislikeStatus);
+    setUserSaveStatus(savedStatus.saveStatus);
+  }
+}, [post.postID]);
+
+useEffect(() => {
+    signalRConnection.on("UpdateReactionCounts", (postId, totalLikes, totalDislikes) => {
+      if(postId === post.postID) {
+        setReactionCounts({ totalLikes, totalDislikes });
+      }
+      if (userId === post.userID && postId === post.postID) {
+        if (totalLikes > reactionCounts.totalLikes) {
+          setNotificationMessage(`Your post has been liked!`);
+          setPopupVisible(true);
+          setTimeout(() => setPopupVisible(false), 3000);
+        } else if (totalDislikes > reactionCounts.totalDislikes) {
+          setNotificationMessage(`Your post has been disliked!`);
+          setPopupVisible(true);
+          setTimeout(() => setPopupVisible(false), 3000);
+        }
+      }
+    });
+
+    signalRConnection.on("UpdateSaveCounts", (postId, totalSaves) => {
+      if (postId === post.postID) {
+        setTotalSaved(totalSaves);
+      }
+      if (postId === post.postID && userId === post.userID && totalSaves > totalSaved) {
+        setNotificationMessage("You post has been saved!");
+        setPopupVisible(true);
+        setTimeout(() => setPopupVisible(false), 3000);
+      }
+    });
+
+    return () => {
+        signalRConnection.off("ReceiveNotification");
+        signalRConnection.off("UpdateReactionCounts");
+        signalRConnection.off("UpdateSaveCounts");
+    };
+}, [post.postID, userId, reactionCounts.totalLikes, reactionCounts.totalDislikes, totalSaved]);
+
 
 
   useEffect(() => {
@@ -413,12 +378,19 @@ if (now.diff(postTime, 'minutes') < 60) {
             <div className="block cursor-pointer">
               <div className='flex gap-3 items-center mb-2'>
                 <Link to={`/profile/${postUserProfile.id}`}>
+                  {postUserProfile?.profilePictureURL ? (
                   <img
-                    src={postUserProfile?.profileUrl ?? NoProfile}
-                    alt={postUserProfile?.userName}
-                    className='w-8 h-8 object-cover'
-                    onClick={handleNavigateProfile}
+                    src={postUserProfile?.profilePictureURL}
+                    alt={post?.title ?? "Post Image"}
+                    className="w-8 h-8 object-cover rounded-full"
                   />
+                ) : (
+                  <img
+                    src={NoProfile}
+                    alt={post?.title ?? "Post Image"}
+                    className="w-8 h-8 object-cover rounded-full"
+                  />
+                )}
                 </Link>
                 <div className='w-full flex justify-between'>
                   <div className="w-full">
@@ -481,11 +453,13 @@ if (now.diff(postTime, 'minutes') < 60) {
             </div>
             <div className='mt-4 flex justify-items-start items-center px-3 py-1 text-ascent-2 text-base ml-9'>
               <p className='flex mr-5 gap-1 items-center text-base cursor-pointer' onClick={handleLike}>
-                 {userLikeStatus ? <BiSolidLike size={20} color='#d2511f' /> : <BiLike size={20} />}
+                 {/* {userLikeStatus ? <BiSolidLike size={20} color='#d2511f' /> : <BiLike size={20} />} */}
+                 <BiLike size={20} />
                  {reactionCounts.totalLikes} 
               </p>
               <p className='flex mr-5 gap-1 items-center text-base cursor-pointer' onClick={handleDislike}>
-                {userDislikeStatus ? <BiSolidDislike size={20} color='#d2511f' /> : <BiDislike size={20} />}
+                {/* {userDislikeStatus ? <BiSolidDislike size={20} color='#d2511f' /> : <BiDislike size={20} />} */}
+                <BiDislike size={20} />
                 {reactionCounts.totalDislikes}
               </p>
               <p className='flex mr-5 gap-1 items-center text-base cursor-pointer'
@@ -496,7 +470,8 @@ if (now.diff(postTime, 'minutes') < 60) {
                 <BiComment size={20}/>
               </p>
               <p className='flex mr-5 gap-1 items-center text-base cursor-pointer' onClick={handleSavePost}>
-                {userSaveStatus ? <BiSolidArchive size={20} color='#d2511f' /> : <BiArchive size={20} />}
+                {/* {userSaveStatus ? <BiSolidArchive size={20} color='#d2511f' /> : <BiArchive size={20} />} */}
+                <BiArchive size={20} />
                 {totalSaved}
               </p>
             </div>

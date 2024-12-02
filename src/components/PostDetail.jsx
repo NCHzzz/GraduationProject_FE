@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { NoProfile } from '../assets';
 import moment from 'moment';
-import { BiComment, BiLike, BiSolidLike, BiDislike, BiArchive, BiSolidDislike, BiSolidArchive } from "react-icons/bi";
+import { BiComment, BiLike, BiSolidLike } from "react-icons/bi";
 import Loading from './Loading';
 import { Link } from 'react-router-dom';
 import { postComments } from "../assets/data";
@@ -11,7 +11,6 @@ import api from '../api';
 const PostDetail = ({ post, onClose, user }) => {
   const [comments, setComments] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [showComments, setShowComments] = useState(0);
   const { theme } = useSelector((state) => state.theme);
   const [postDetail, setPostDetail] = useState('');
   
@@ -113,7 +112,7 @@ const PostDetail = ({ post, onClose, user }) => {
             </div> */}
             <p className={`${theme === "light" ? " text-black" : " text-white "} mb-2 `}>{postDetail?.location}</p>
               
-            <div className='mt-4 flex justify-items-start items-center px-3 py-1 text-ascent-2 text-base border-t border-[#66666645]'>
+            {/* <div className='mt-4 flex justify-items-start items-center px-3 py-1 text-ascent-2 text-base border-t border-[#66666645]'>
               <p className='flex mr-5 gap-1 items-center text-base cursor-pointer' onClick={handleLike}>
                 {post?.likes?.includes(user?._id) ? (
                   <BiSolidLike size={20} color='#d2511f' />
@@ -152,7 +151,7 @@ const PostDetail = ({ post, onClose, user }) => {
                 {post?.likes?.length} 
               </p>
 
-            </div>
+            </div> */}
 
             <div className='mt-4'>
               <h3 className='font-medium text-lg'>Comments</h3>

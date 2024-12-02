@@ -3,20 +3,17 @@ import {
     Small_LeftSideBar
 } from '../components'
 import { useSelector } from "react-redux";
-import { Link } from 'react-router-dom';
-import { NoProfile } from "../assets";
-import { BsPersonFillAdd } from "react-icons/bs";
-import { suggest } from "../assets/data";
 import { Search } from 'lucide-react';
 import React, { useState, useEffect } from 'react';
 import PostDetail from '../components/PostDetail'; 
 import api from '../api';
 import { jwtDecode } from "jwt-decode";
 import SearchComponent from '../components/SearchComponent';
+import RightSidebar from '../components/RightSideBar';
 
 const Explore = ({ searchInput }) => {
     const { theme } = useSelector((state)=> state.theme);
-    const [suggestedFriends, setSuggestedFriends] = useState(suggest);
+    const { otherUsers } = useSelector(store => store.user);
     const [hashtags, setHashtags] = useState([]);
     const [clickedHashtag, setClickedHashtag] = useState('');
     const [filteredPosts, setFilteredPosts] = useState([]);
@@ -145,7 +142,7 @@ const Explore = ({ searchInput }) => {
           </div>
           {/* CENTER */}
           <div className='w-full flex h-screen md:w-[60%] sm:w-[100%] border-l border-r border-l-gray-700 border-r-gray-700 flex-col gap-0 overflow-y-auto py-2'>
-            <div className={`${theme === "light" ? "bg-white text-black border border-gray-800" : "bg-gray-700 text-white"} flex py-2 px-4 ml-[5%] rounded-full outline-none w-[90%]`}>
+            {/* <div className={`${theme === "light" ? "bg-white text-black border border-gray-800" : "bg-gray-700 text-white"} flex py-2 px-4 ml-[5%] rounded-full outline-none w-[90%]`}>
                 <Search size="20px" />
                 <input 
                     type="text"
@@ -154,7 +151,7 @@ const Explore = ({ searchInput }) => {
                     value={searchQuery}
                     onChange={handleSearchInputChange}
                  />
-            </div>
+            </div> */}
             {/* Overlay and SearchComponent */}
             {showSearchComponent && (
             <>
@@ -228,49 +225,9 @@ const Explore = ({ searchInput }) => {
         </div> 
     </div>
 
-          {/* RIGHT */}
-          <div className='hidden w-[30%]  h-full lg:flex flex-col overflow-y-auto'>
-            <div className={`w-[90%]  px-0 lg:px-2 mt-3 bg-bgColor ${theme === "light" ? "bg-white text-black" : "bg-black text-white"}  lg:rounded-lg h-screen overflow-hidden `}>
-                <div className='p-4 rounded-2xl my-4 border border-gray-700'>
-                    <h1 className='font-bold text-lg'>Who to follow</h1>
-                    <div className='w-full flex flex-col gap-4 pt-4'>
-                        {suggestedFriends?.map((friend) => (
-                            <div
-                            className='flex items-center justify-between'
-                            key={friend._id}
-                            >
-                            <Link
-                                to={"/profile/" + friend?._id}
-                                key={friend?._id}
-                                className='w-full flex gap-4 items-center cursor-pointer'
-                            >
-                                <img
-                                src={friend?.profileUrl ?? NoProfile}
-                                alt={friend?.firstName}
-                                className='w-10 h-10 object-cover rounded-full'
-                                />
-                                <div className='flex-1 '>
-                                <p className='text-base font-medium text-ascent-1'>
-                                    {friend?.firstName} {friend?.lastName}
-                                </p>
-                                <span className='text-sm text-ascent-2'>
-                                    {friend?.profession ?? "No Profession"}
-                                </span>
-                                </div>
-                            </Link>
-                            <div className='flex gap-1'>
-                                <button
-                                className='bg-customOrange text-sm text-white p-1 rounded hover:bg-white hover:text-customOrange'
-                                onClick={() => {}}
-                                >
-                                <BsPersonFillAdd size={20} className='hover:bg-white' />
-                                </button>
-                            </div>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            </div>
+        {/* RIGHT */}
+        <div className='hidden w-[30%] h-full lg:flex flex-col overflow-y-auto'>
+            <RightSidebar otherUsers={otherUsers} />
           </div>
         </div>
       </div>

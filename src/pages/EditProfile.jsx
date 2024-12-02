@@ -24,10 +24,8 @@ const EditProfile = () => {
     const [popupVisible, setPopupVisible] = useState(false);
     const [fullName, setFullName] = useState('');
     const [uploading, setUploading] = useState(false);
-    const [images, setImages] = useState(''); 
     
     const token = localStorage.getItem('token');
-    console.log("token: ", token);
     let userId = null;
     if (token) {
       const decodedToken = jwtDecode(token);
@@ -51,6 +49,7 @@ const EditProfile = () => {
                 setFullName(profileData.fullName || '');
                 setBio(profileData.bio || '');
                 setProfilePicture(profileData.profilePictureURL || '');
+
             } catch (error) {
                 console.error('Error fetching data:', error);
             }
@@ -61,18 +60,18 @@ const EditProfile = () => {
       const handlePostSubmit = async (e) => {
         e.preventDefault();
         console.log('Form submitted');
+
         const postData = {
             userName: userName,
             email: email,
             fullName: fullName,
             bio: bio,
-            profilePictureURL: profilePicture
+            profilePictureURL: profilePicture,
         };
         console.log("post data: ", postData); 
 
 
         try {
-            console.log('Sending POST request to API...');
             const response = await api.put('/api/User/me', postData,
                 {
                     headers: {
@@ -80,15 +79,15 @@ const EditProfile = () => {
                     },
                 }
         );
-            console.log('Update profile successfully:', response.data);
             setUserName(response.data.userName);
             setEmail(response.data.email);
             setFullName(response.data.fullName);
             setBio(response.data.bio);
+            // setProfilePicture(response.data.profilePictureURL);
             setProfilePicture('');
-
             setPopupVisible(true);
-            setTimeout(() => setPopupVisible(false), 3000); // Hide popup after 3 seconds
+            setTimeout(() => setPopupVisible(false), 3000); 
+
         } catch (error) {
             console.error('Error creating post:', error);
             if (error.response) {
@@ -112,7 +111,6 @@ const EditProfile = () => {
             setUploading(false);
             return;
         }
-    
         const formData = new FormData();
         formData.append("file", file);
         formData.append("upload_preset", "foodtalk");
@@ -122,16 +120,40 @@ const EditProfile = () => {
                 `https://api.cloudinary.com/v1_1/dre3daq6i/image/upload`,
                 formData
             );
-            setImages(response.data.secure_url); // Save the URL of the uploaded image
+            setProfilePicture(response.data.secure_url); // Save the URL of the uploaded image
         } catch (error) {
             console.error("Error uploading to Cloudinary:", error);
         } finally {
             setUploading(false); // Stop the loader
         }
+
+        // setUploading(true); // Start the loader
+        // const file = e.target.files[0]; // Select only the first file
+    
+        // if (!file) {
+        //     setUploading(false);
+        //     return;
+        // }
+    
+        // const formData = new FormData();
+        // formData.append("file", file);
+        // formData.append("upload_preset", "foodtalk");
+    
+        // try {
+        //     const response = await api.post(
+        //         `https://api.cloudinary.com/v1_1/dre3daq6i/image/upload`,
+        //         formData
+        //     );
+        //     setImages(response.data.secure_url); // Save the URL of the uploaded image
+        // } catch (error) {
+        //     console.error("Error uploading to Cloudinary:", error);
+        // } finally {
+        //     setUploading(false); // Stop the loader
+        // }
     };
     
     const handleImageRemove = () => {
-        setImages(""); 
+        setProfilePicture(""); 
     };
     
     if (!token) {
@@ -201,10 +223,10 @@ const EditProfile = () => {
             <h2 className={`${theme === "light" ? "bg-white text-black" : "bg-grey-400 text-white"} text-xl font-bold mb-4`}>Profile picture</h2>
             <input type="file" accept="image/*" onChange={handleImageChange} />
                     <div className="flex gap-2 mt-4">
-                        {images && (
+                        {profilePicture && (
                             <div className="relative">
                                 <img
-                                    src={images} // Cloudinary URL
+                                    src={profilePicture} // Cloudinary URL
                                     alt="Uploaded image"
                                     className="w-30 h-30 object-cover rounded-md"
                                 />

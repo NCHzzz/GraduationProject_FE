@@ -91,7 +91,7 @@ function App() {
           <Route element={<Layout />}>
             <Route path="/home" element={<Home />} />
             <Route path="/profile" element={<Profile />} />
-            <Route path="/profile/:userName" element={<OtherUserProfile />} />
+            <Route path="/profile/:id" element={<OtherUserProfile />} />
             <Route path="/edit-profile" element={<EditProfile />} />
             <Route path="/notification" element={<Notification />} />
             <Route path="/create-post" element={<CreatePost />} />
