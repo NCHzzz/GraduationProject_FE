@@ -8,5 +8,6 @@ import Explore from ".pages/Explore";
 import CreatePost from ".pages/CreatePost";
 import EditProfile from ".pages/EditProfile";
 import Notification from ".pages/Notification";
+import EditPost from "./pages/EditPost";
 
-export { Login, Home, Register, Profile, ResetPassword, OtherUserProfile, Explore, CreatePost, EditProfile, Notification };
+export { Login, Home, Register, Profile, ResetPassword, OtherUserProfile, Explore, CreatePost, EditProfile, Notification, EditPost };

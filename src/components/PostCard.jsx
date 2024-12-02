@@ -12,6 +12,7 @@ import { useInView } from "react-intersection-observer";
 import OtherUserProfile from "../pages/OtherUserProfile";
 import api from "../api";
 import signalRConnection from "../SignalRService";
+import { MdEdit, MdDelete } from 'react-icons/md';
 
 const NotificationPopup = ({ message }) => {
   return (
@@ -40,6 +41,7 @@ const PostCard = ({ post, user }) => {
   const [totalLikes, setTotalLikes] = useState(post.totalLikes); 
   const [totalDislikes, setTotalDislikes] = useState(post.totalDislikes); 
   const [totalSaved, setTotalSaved] = useState(0); 
+  const navigate = useNavigate();
   const [reactionCounts, setReactionCounts] = useState({
     totalLikes: post.totalLikes,
     totalDislikes: post.totalDislikes,
@@ -347,6 +349,22 @@ useEffect(() => {
     } catch (error) {console.error(error);}
   };
 
+  const handleEditPost = async (postID) => {
+    navigate(`/edit-post/${postID}`);
+  }
+
+  const handleDeletePost = async (postID) => {
+    try {
+      const response = await api.delete(`/api/Post/${postID}`, {headers: {Authorization: `Bearer ${token}`,},});
+      if (response.status === 200) {
+        console.log('Post deleted successfully!');
+        setNotificationMessage(`Delete post successfully!`);
+        setPopupVisible(true);
+        setTimeout(() => setPopupVisible(false), 3000);
+      }
+    } catch (error) {console.error(error);}
+  }
+
 const createdAt = post.createdAt;
 const now = moment(); 
 const postTime = moment(createdAt); 
@@ -403,19 +421,28 @@ if (now.diff(postTime, 'minutes') < 60) {
                       <p className='font-light text-m ml-1 text-gray-400'>
                           @{postUserProfile.userName}
                         </p>
-                      <button
-                        className={`${theme === "light" ? "bg-black text-white hover:bg-white hover:text-customOrange" : "bg-white text-black hover:bg-black hover:text-customOrange"} p-1 rounded text-lg ml-2`}
-                        onClick={() => {
-                          if (isFollowing) {
-                            handleUnfollow(postUserProfile.id);  
-                          } else {
-                            handleFollow(postUserProfile.id); 
-                          }
-                        }}
-                        disabled={postUserProfile.id === userProfile.id}>
-                        {postUserProfile.id === userProfile.id ? null : isFollowing ? 
-                        (<AiOutlineMinus size={12}/>) : (<AiOutlinePlus size={12}/>)}
-                      </button>
+                        <button
+                          className={`${theme === "light" ? "bg-black text-white hover:bg-white hover:text-customOrange" : "bg-white text-black hover:bg-black hover:text-customOrange"} p-1 rounded text-lg ml-2`}
+                          onClick={() => {
+                            if (isFollowing) {
+                              handleUnfollow(postUserProfile.id);  
+                            } else {
+                              handleFollow(postUserProfile.id); 
+                            }
+                          }}
+                          disabled={postUserProfile.id === userProfile.id}>
+                          {postUserProfile.id === userProfile.id ? null : isFollowing ? 
+                          (<AiOutlineMinus size={12}/>) : (<AiOutlinePlus size={12}/>)}
+                        </button>
+                        {postUserProfile.id === userProfile.id && (
+                          <div className="flex ml-11 ">
+                            <MdEdit size={20} color='#d2511f' 
+                              onClick={() => handleEditPost(post.postID)}/>
+                            <MdDelete size={20} color='#d2511f'
+                            className="ml-4"
+                              onClick={() => handleDeletePost(post.postID)} />
+                          </div>
+                        )}
                     </div>
                     <span className='text-ascent-2 text-xs'>{displayTime}</span>
                   </div>

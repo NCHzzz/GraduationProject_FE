@@ -63,6 +63,7 @@ const Explore = React.lazy(() => import('./pages/Explore'));
 const EditProfile = React.lazy(() => import('./pages/EditProfile'));
 const Notification = React.lazy(() => import('./pages/Notification'));
 const CreatePost = React.lazy(() => import('./pages/CreatePost'));
+const EditPost = React.lazy(() => import('./pages/EditPost'));
 // const Profile = React.lazy(() => {
 //   console.log("Profile component is being loaded!");
 //   return import("./pages/Profile");
@@ -96,6 +97,7 @@ function App() {
             <Route path="/notification" element={<Notification />} />
             <Route path="/create-post" element={<CreatePost />} />
             <Route path="/explore" element={<Explore />} />
+            <Route path="/edit-post/:postId" element={<EditPost />} />
           </Route>
           {/* Public routes */}
           <Route path="/" element={<Navigate to="/login" />} />
