@@ -71,8 +71,8 @@ const RightSidebar = ({ otherUsers }) => {
   {suggestUser
     .filter((user) => !user.isFollowing) // Ensure only users who are not followed are displayed
     .slice(0, 3) // Limit the display to the first 3 users
-    .map((suggestUser) => (
-      <div className='flex items-center justify-between' key={suggestUser._id}>
+    .map((suggestUser, index) => (
+      <div className='flex items-center justify-between' key={index}>
         <Link
           to={"/profile/" + suggestUser._id}
           className='w-full flex gap-4 items-center cursor-pointer'

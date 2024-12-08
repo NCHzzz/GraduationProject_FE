@@ -28,7 +28,6 @@ const Login = () => {
       if (response.data.token) {
         localStorage.setItem('token', response.data.token);
         navigate('/home'); 
-        // console.log("Token after logging: ",response.data.token);
     
       }
       
